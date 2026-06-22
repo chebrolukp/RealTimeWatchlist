@@ -20,11 +20,11 @@ val finnhubApiKey: String = localProperties.getProperty("FINNHUB_API_KEY", "").t
 val demoMode: Boolean = localProperties.getProperty("DEMO_MODE", "true").trim().toBoolean()
 
 android {
-    namespace = "com.doximity.realtimewatchlist_krishna_doximity\n"
+    namespace = "com.doximity.realtimewatchlist_krishna_doximity"
     compileSdk = 37
 
     defaultConfig {
-        applicationId = "com.doximity.realtimewatchlist_krishna_doximity\n"
+        applicationId = "com.doximity.realtimewatchlist_krishna_doximity"
         minSdk = 24
         targetSdk = 37
         versionCode = 1
