@@ -4,7 +4,9 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import com.doximity.realtimewatchlist_krishna_doximity.core.ui.adaptive.ProvideWindowWidthSizeClass
+import androidx.compose.runtime.CompositionLocalProvider
+import com.doximity.realtimewatchlist_krishna_doximity.core.ui.adaptive.LocalWindowWidthSizeClass
+import com.doximity.realtimewatchlist_krishna_doximity.core.ui.adaptive.rememberWindowWidthSizeClass
 import com.doximity.realtimewatchlist_krishna_doximity.ui.navigation.HomeScreen
 import com.doximity.realtimewatchlist_krishna_doximity.ui.theme.RealtimeWatchListKrishnaDoximityTheme
 import dagger.hilt.android.AndroidEntryPoint
@@ -15,7 +17,10 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            ProvideWindowWidthSizeClass {
+            val widthSizeClass = rememberWindowWidthSizeClass()
+            CompositionLocalProvider(
+                LocalWindowWidthSizeClass provides widthSizeClass,
+            ) {
                 RealtimeWatchListKrishnaDoximityTheme {
                     HomeScreen()
                 }

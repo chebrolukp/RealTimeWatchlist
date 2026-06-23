@@ -7,66 +7,37 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
-enum class AppWidthSizeClass {
-    Compact,
-    Medium,
-    Expanded,
-}
-
-val LocalWindowWidthSizeClass = staticCompositionLocalOf { AppWidthSizeClass.Compact }
-
-fun widthToSizeClass(width: Dp): AppWidthSizeClass = when {
-    width < 600.dp -> AppWidthSizeClass.Compact
-    width < 840.dp -> AppWidthSizeClass.Medium
-    else -> AppWidthSizeClass.Expanded
-}
-
-@Composable
-fun ProvideWindowWidthSizeClass(
-    modifier: Modifier = Modifier,
-    content: @Composable () -> Unit,
-) {
-    val screenWidth = LocalConfiguration.current.screenWidthDp.dp
-    CompositionLocalProvider(
-        LocalWindowWidthSizeClass provides widthToSizeClass(screenWidth),
-    ) {
-        Box(modifier = modifier.fillMaxSize()) {
-            content()
-        }
-    }
-}
+val LocalWindowWidthSizeClass = staticCompositionLocalOf { WindowWidthSizeClass.Compact }
 
 @Composable
 fun adaptiveContentPadding(): Dp = when (LocalWindowWidthSizeClass.current) {
-    AppWidthSizeClass.Compact -> 16.dp
-    AppWidthSizeClass.Medium -> 24.dp
-    AppWidthSizeClass.Expanded -> 32.dp
+    WindowWidthSizeClass.Compact -> 16.dp
+    WindowWidthSizeClass.Medium -> 24.dp
+    WindowWidthSizeClass.Expanded -> 32.dp
 }
 
 @Composable
 fun adaptiveListColumnCount(): Int = when (LocalWindowWidthSizeClass.current) {
-    AppWidthSizeClass.Expanded -> 2
+    WindowWidthSizeClass.Expanded -> 2
     else -> 1
 }
 
 @Composable
 fun adaptiveMaxContentWidth(): Dp? = when (LocalWindowWidthSizeClass.current) {
-    AppWidthSizeClass.Expanded -> 960.dp
-    AppWidthSizeClass.Medium -> 720.dp
-    AppWidthSizeClass.Compact -> null
+    WindowWidthSizeClass.Expanded -> 960.dp
+    WindowWidthSizeClass.Medium -> 720.dp
+    WindowWidthSizeClass.Compact -> null
 }
 
 @Composable
 fun useNavigationRail(): Boolean =
-    LocalWindowWidthSizeClass.current != AppWidthSizeClass.Compact
+    LocalWindowWidthSizeClass.current != WindowWidthSizeClass.Compact
 
 @Composable
 fun AdaptiveContentContainer(

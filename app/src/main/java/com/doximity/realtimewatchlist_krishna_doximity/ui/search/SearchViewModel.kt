@@ -36,12 +36,24 @@ data class SearchUiState(
 )
 
 @HiltViewModel
-class SearchViewModel @Inject constructor(
-    @ApplicationContext private val context: Context,
+class SearchViewModel(
+    private val toErrorMessage: (Throwable) -> String,
     private val searchInstrumentsUseCase: SearchInstrumentsUseCase,
     private val addToWatchlistUseCase: AddToWatchlistUseCase,
     private val isInWatchlistUseCase: IsInWatchlistUseCase,
 ) : ViewModel() {
+
+    @Inject constructor(
+        @ApplicationContext context: Context,
+        searchInstrumentsUseCase: SearchInstrumentsUseCase,
+        addToWatchlistUseCase: AddToWatchlistUseCase,
+        isInWatchlistUseCase: IsInWatchlistUseCase,
+    ) : this(
+        toErrorMessage = { it.toUserMessage(context) },
+        searchInstrumentsUseCase = searchInstrumentsUseCase,
+        addToWatchlistUseCase = addToWatchlistUseCase,
+        isInWatchlistUseCase = isInWatchlistUseCase,
+    )
 
     private val _uiState = MutableStateFlow(SearchUiState())
     val uiState: StateFlow<SearchUiState> = _uiState.asStateFlow()
@@ -88,7 +100,7 @@ class SearchViewModel @Inject constructor(
                         it.copy(
                             isSearching = false,
                             results = emptyList(),
-                            errorMessage = error.toUserMessage(context),
+                            errorMessage = toErrorMessage(error),
                         )
                     }
                 },

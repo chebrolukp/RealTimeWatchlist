@@ -11,6 +11,9 @@ import com.doximity.realtimewatchlist_krishna_doximity.domain.model.Quote
 import com.doximity.realtimewatchlist_krishna_doximity.domain.model.WatchlistItem
 import com.doximity.realtimewatchlist_krishna_doximity.domain.repository.MarketDataRepository
 import com.doximity.realtimewatchlist_krishna_doximity.domain.repository.WatchlistRepository
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -18,6 +21,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -28,14 +32,25 @@ class WatchlistInteractorTest {
 
     private val dispatcher = StandardTestDispatcher()
 
+    private fun runApplicationScopeTest(
+        testBody: suspend TestScope.(CoroutineScope) -> Unit,
+    ) = runTest(dispatcher) {
+        val applicationScope = CoroutineScope(SupervisorJob() + dispatcher)
+        try {
+            testBody(applicationScope)
+        } finally {
+            applicationScope.cancel()
+        }
+    }
+
     @Test
-    fun emptyWatchlist_emitsEmptyState() = runTest(dispatcher) {
+    fun emptyWatchlist_emitsEmptyState() = runApplicationScopeTest { scope ->
         val watchlistRepository = FakeWatchlistRepository(MutableStateFlow(emptyList()))
         val marketDataRepository = FakeMarketDataRepository()
         val interactor = WatchlistInteractor(
             watchlistRepository = watchlistRepository,
             marketDataRepository = marketDataRepository,
-            applicationScope = this,
+            applicationScope = scope,
         )
 
         interactor.start()
@@ -49,7 +64,7 @@ class WatchlistInteractorTest {
     }
 
     @Test
-    fun watchlistWithQuote_buildsLiveEntry() = runTest(dispatcher) {
+    fun watchlistWithQuote_buildsLiveEntry() = runApplicationScopeTest { scope ->
         val item = WatchlistItem("AAPL", "AAPL", "Apple Inc.", "Common Stock", 0L)
         val watchlistRepository = FakeWatchlistRepository(MutableStateFlow(listOf(item)))
         val marketDataRepository = FakeMarketDataRepository(
@@ -66,7 +81,7 @@ class WatchlistInteractorTest {
         val interactor = WatchlistInteractor(
             watchlistRepository = watchlistRepository,
             marketDataRepository = marketDataRepository,
-            applicationScope = this,
+            applicationScope = scope,
         )
 
         interactor.start()
@@ -78,7 +93,7 @@ class WatchlistInteractorTest {
     }
 
     @Test
-    fun liveUpdate_overridesSnapshotPrice() = runTest(dispatcher) {
+    fun liveUpdate_overridesSnapshotPrice() = runApplicationScopeTest { scope ->
         val item = WatchlistItem("AAPL", "AAPL", "Apple Inc.", "Common Stock", 0L)
         val watchlistRepository = FakeWatchlistRepository(MutableStateFlow(listOf(item)))
         val marketDataRepository = FakeMarketDataRepository(
@@ -95,7 +110,7 @@ class WatchlistInteractorTest {
         val interactor = WatchlistInteractor(
             watchlistRepository = watchlistRepository,
             marketDataRepository = marketDataRepository,
-            applicationScope = this,
+            applicationScope = scope,
         )
 
         interactor.start()

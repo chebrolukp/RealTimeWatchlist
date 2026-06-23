@@ -2,8 +2,6 @@
 
 package com.doximity.realtimewatchlist_krishna_doximity.ui.search
 
-import android.content.Context
-import androidx.test.core.app.ApplicationProvider
 import com.doximity.realtimewatchlist_krishna_doximity.MainDispatcherRule
 import com.doximity.realtimewatchlist_krishna_doximity.core.domain.model.ConnectionState
 import com.doximity.realtimewatchlist_krishna_doximity.domain.model.Instrument
@@ -32,10 +30,11 @@ class SearchViewModelTest {
     @get:Rule
     val mainDispatcherRule = MainDispatcherRule()
 
-    private val context: Context = ApplicationProvider.getApplicationContext()
+    private val toErrorMessage: (Throwable) -> String =
+        { error -> error.message ?: "Search failed" }
 
     @Test
-    fun successfulSearch_populatesResults() = runTest {
+    fun successfulSearch_populatesResults() = runTest(mainDispatcherRule.dispatcher) {
         val repository = FakeMarketDataRepositoryForTest(
             searchResult = Result.success(
                 listOf(
@@ -45,13 +44,14 @@ class SearchViewModelTest {
         )
         val watchlistRepository = FakeWatchlistRepositoryForTest()
         val viewModel = SearchViewModel(
-            context,
+            toErrorMessage,
             SearchInstrumentsUseCase(repository),
             AddToWatchlistUseCase(watchlistRepository),
             IsInWatchlistUseCase(watchlistRepository),
         )
 
         viewModel.onQueryChange("AAPL")
+        mainDispatcherRule.dispatcher.scheduler.advanceTimeBy(300)
         advanceUntilIdle()
 
         val state = viewModel.uiState.value
@@ -61,19 +61,20 @@ class SearchViewModelTest {
     }
 
     @Test
-    fun failedSearch_setsErrorMessage() = runTest {
+    fun failedSearch_setsErrorMessage() = runTest(mainDispatcherRule.dispatcher) {
         val repository = FakeMarketDataRepositoryForTest(
             searchResult = Result.failure(IllegalStateException("Rate limited")),
         )
         val watchlistRepository = FakeWatchlistRepositoryForTest()
         val viewModel = SearchViewModel(
-            context,
+            toErrorMessage,
             SearchInstrumentsUseCase(repository),
             AddToWatchlistUseCase(watchlistRepository),
             IsInWatchlistUseCase(watchlistRepository),
         )
 
         viewModel.onQueryChange("AAPL")
+        mainDispatcherRule.dispatcher.scheduler.advanceTimeBy(300)
         advanceUntilIdle()
 
         assertEquals("Rate limited", viewModel.uiState.value.errorMessage)
@@ -81,20 +82,21 @@ class SearchViewModelTest {
     }
 
     @Test
-    fun addToWatchlist_marksResultAsAdded() = runTest {
+    fun addToWatchlist_marksResultAsAdded() = runTest(mainDispatcherRule.dispatcher) {
         val instrument = Instrument("AAPL", "AAPL", "Apple Inc.", "Common Stock")
         val repository = FakeMarketDataRepositoryForTest(
             searchResult = Result.success(listOf(instrument)),
         )
         val watchlistRepository = FakeWatchlistRepositoryForTest()
         val viewModel = SearchViewModel(
-            context,
+            toErrorMessage,
             SearchInstrumentsUseCase(repository),
             AddToWatchlistUseCase(watchlistRepository),
             IsInWatchlistUseCase(watchlistRepository),
         )
 
         viewModel.onQueryChange("AAPL")
+        mainDispatcherRule.dispatcher.scheduler.advanceTimeBy(300)
         advanceUntilIdle()
         viewModel.addToWatchlist(instrument)
         advanceUntilIdle()

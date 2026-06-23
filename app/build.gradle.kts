@@ -49,10 +49,11 @@ android {
     testOptions {
         unitTests.isIncludeAndroidResources = true
     }
-    kotlin {
-        compilerOptions {
-            freeCompilerArgs.add("-Xannotation-default-target=param-property")
-        }
+}
+
+kotlin {
+    compilerOptions {
+        freeCompilerArgs.add("-Xannotation-default-target=param-property")
     }
 }
 
@@ -60,7 +61,7 @@ dependencies {
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.compose.material3)
-    implementation("androidx.compose.material:material-icons-extended")
+    implementation(libs.androidx.compose.material.icons.extended)
     implementation(libs.androidx.compose.ui)
     implementation(libs.androidx.compose.ui.graphics)
     implementation(libs.androidx.compose.ui.tooling.preview)
@@ -92,9 +93,10 @@ dependencies {
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.turbine)
-    testImplementation("androidx.test:core:1.6.1")
+    testImplementation(libs.androidx.core)
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
+    androidTestImplementation(libs.androidx.compose.material3)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(libs.androidx.junit)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
