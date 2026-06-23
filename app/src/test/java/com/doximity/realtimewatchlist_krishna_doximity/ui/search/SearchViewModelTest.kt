@@ -14,11 +14,12 @@ import com.doximity.realtimewatchlist_krishna_doximity.domain.repository.Watchli
 import com.doximity.realtimewatchlist_krishna_doximity.domain.usecase.AddToWatchlistUseCase
 import com.doximity.realtimewatchlist_krishna_doximity.domain.usecase.ObserveWatchlistSymbolsUseCase
 import com.doximity.realtimewatchlist_krishna_doximity.domain.usecase.SearchInstrumentsUseCase
-import com.doximity.realtimewatchlist_krishna_doximity.domain.usecase.SearchInstrumentsWithWatchlistUseCase
+import com.doximity.realtimewatchlist_krishna_doximity.domain.usecase.SearchWithWatchlistUseCase
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.emptyFlow
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -43,6 +44,7 @@ class SearchViewModelTest {
         )
         val watchlistRepository = FakeWatchlistRepositoryForTest()
         val viewModel = createViewModel(marketRepository, watchlistRepository)
+        backgroundScope.launch { viewModel.uiState.collect {} }
 
         viewModel.onQueryChange("AAPL")
         mainDispatcherRule.dispatcher.scheduler.advanceTimeBy(300)
@@ -61,6 +63,7 @@ class SearchViewModelTest {
         )
         val watchlistRepository = FakeWatchlistRepositoryForTest()
         val viewModel = createViewModel(marketRepository, watchlistRepository)
+        backgroundScope.launch { viewModel.uiState.collect {} }
 
         viewModel.onQueryChange("AAPL")
         mainDispatcherRule.dispatcher.scheduler.advanceTimeBy(300)
@@ -81,6 +84,7 @@ class SearchViewModelTest {
         )
         val watchlistRepository = FakeWatchlistRepositoryForTest()
         val viewModel = createViewModel(marketRepository, watchlistRepository)
+        backgroundScope.launch { viewModel.uiState.collect {} }
 
         viewModel.onQueryChange("AAPL")
         mainDispatcherRule.dispatcher.scheduler.advanceTimeBy(300)
@@ -98,8 +102,10 @@ class SearchViewModelTest {
     ): SearchViewModel {
         val searchUseCase = SearchInstrumentsUseCase(marketRepository)
         return SearchViewModel(
-            searchInstrumentsWithWatchlistUseCase = SearchInstrumentsWithWatchlistUseCase(searchUseCase),
-            observeWatchlistSymbolsUseCase = ObserveWatchlistSymbolsUseCase(watchlistRepository),
+            searchWithWatchlistUseCase = SearchWithWatchlistUseCase(
+                searchUseCase,
+                ObserveWatchlistSymbolsUseCase(watchlistRepository),
+            ),
             addToWatchlistUseCase = AddToWatchlistUseCase(watchlistRepository),
         )
     }
