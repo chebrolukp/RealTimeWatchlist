@@ -17,7 +17,3 @@ internal fun <T> Response<T>.requireFinnhubBody(): T {
 }
 
 class FinnhubApiException(message: String) : Exception(message)
-
-class FinnhubUnauthorizedException : Exception("Finnhub request unauthorized (401).")
-class FinnhubForbiddenException : Exception("Finnhub request forbidden (403).")
-class FinnhubRateLimitException : Exception("Finnhub rate limit exceeded (429).")

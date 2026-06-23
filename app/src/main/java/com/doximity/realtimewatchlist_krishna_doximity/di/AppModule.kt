@@ -1,15 +1,19 @@
 package com.doximity.realtimewatchlist_krishna_doximity.di
 
+import android.content.Context
+import androidx.room.Room
 import com.doximity.realtimewatchlist_krishna_doximity.BuildConfig
+import com.doximity.realtimewatchlist_krishna_doximity.data.local.WatchlistDatabase
 import com.doximity.realtimewatchlist_krishna_doximity.data.remote.FinnhubApi
 import com.doximity.realtimewatchlist_krishna_doximity.data.repository.FinnhubMarketDataRepository
-import com.doximity.realtimewatchlist_krishna_doximity.data.repository.InMemoryWatchlistRepository
+import com.doximity.realtimewatchlist_krishna_doximity.data.repository.RoomWatchlistRepository
 import com.doximity.realtimewatchlist_krishna_doximity.domain.repository.MarketDataRepository
 import com.doximity.realtimewatchlist_krishna_doximity.domain.repository.WatchlistRepository
 import dagger.Binds
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
+import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
@@ -35,7 +39,7 @@ abstract class RepositoryModule {
     @Binds
     @Singleton
     abstract fun bindWatchlistRepository(
-        impl: InMemoryWatchlistRepository,
+        impl: RoomWatchlistRepository,
     ): WatchlistRepository
 }
 
@@ -59,6 +63,24 @@ object AppModule {
         ignoreUnknownKeys = true
         isLenient = true
     }
+}
+
+@Module
+@InstallIn(SingletonComponent::class)
+object DatabaseModule {
+
+    @Provides
+    @Singleton
+    fun provideDatabase(
+        @ApplicationContext context: Context,
+    ): WatchlistDatabase = Room.databaseBuilder(
+        context,
+        WatchlistDatabase::class.java,
+        "watchlist.db",
+    ).build()
+
+    @Provides
+    fun provideWatchlistDao(database: WatchlistDatabase) = database.watchlistDao()
 }
 
 @Module
