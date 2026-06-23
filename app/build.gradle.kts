@@ -16,6 +16,12 @@ val localProperties = Properties().apply {
 }
 
 val finnhubApiKey: String = localProperties.getProperty("FINNHUB_API_KEY", "").trim()
+val demoModeProperty: String = localProperties.getProperty("DEMO_MODE", "").trim()
+val demoMode: Boolean = when {
+    demoModeProperty.equals("true", ignoreCase = true) -> true
+    demoModeProperty.equals("false", ignoreCase = true) -> false
+    else -> finnhubApiKey.isBlank()
+}
 
 android {
     namespace = "com.doximity.realtimewatchlist_krishna_doximity"
@@ -31,6 +37,7 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
         buildConfigField("String", "FINNHUB_API_KEY", "\"$finnhubApiKey\"")
+        buildConfigField("boolean", "DEMO_MODE", demoMode.toString())
     }
 
     buildTypes {

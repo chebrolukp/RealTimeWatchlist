@@ -42,6 +42,7 @@
     <string name="price_status_unavailable">Unavailable</string>
 
     <!-- Banners & loading -->
+    <string name="demo_mode_banner">Demo mode — sample data only. Add FINNHUB_API_KEY to local.properties for live Finnhub data.</string>
     <string name="error_banner">Error: %1$s</string>
     <string name="stream_status">Stream: %1$s</string>
     <string name="stream_status_description">Price stream status: %1$s</string>

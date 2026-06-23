@@ -5,11 +5,12 @@ import androidx.room.Room
 import com.doximity.realtimewatchlist_krishna_doximity.BuildConfig
 import com.doximity.realtimewatchlist_krishna_doximity.data.local.WatchlistDatabase
 import com.doximity.realtimewatchlist_krishna_doximity.data.remote.FinnhubApi
+import com.doximity.realtimewatchlist_krishna_doximity.data.repository.FakeMarketDataRepository
 import com.doximity.realtimewatchlist_krishna_doximity.data.repository.FinnhubMarketDataRepository
 import com.doximity.realtimewatchlist_krishna_doximity.data.repository.RoomWatchlistRepository
+import javax.inject.Provider
 import com.doximity.realtimewatchlist_krishna_doximity.domain.repository.MarketDataRepository
 import com.doximity.realtimewatchlist_krishna_doximity.domain.repository.WatchlistRepository
-import dagger.Binds
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -29,18 +30,25 @@ import javax.inject.Singleton
 
 @Module
 @InstallIn(SingletonComponent::class)
-abstract class RepositoryModule {
-    @Binds
-    @Singleton
-    abstract fun bindMarketDataRepository(
-        impl: FinnhubMarketDataRepository,
-    ): MarketDataRepository
+object RepositoryModule {
 
-    @Binds
+    @Provides
     @Singleton
-    abstract fun bindWatchlistRepository(
+    fun provideMarketDataRepository(
+        @Named("demoMode") demoMode: Boolean,
+        finnhubRepository: Provider<FinnhubMarketDataRepository>,
+        fakeRepository: Provider<FakeMarketDataRepository>,
+    ): MarketDataRepository = if (demoMode) {
+        fakeRepository.get()
+    } else {
+        finnhubRepository.get()
+    }
+
+    @Provides
+    @Singleton
+    fun provideWatchlistRepository(
         impl: RoomWatchlistRepository,
-    ): WatchlistRepository
+    ): WatchlistRepository = impl
 }
 
 @Module
@@ -56,6 +64,10 @@ object AppModule {
     @Singleton
     @Named("finnhubApiKey")
     fun provideFinnhubApiKey(): String = BuildConfig.FINNHUB_API_KEY
+
+    @Provides
+    @Named("demoMode")
+    fun provideDemoMode(): Boolean = BuildConfig.DEMO_MODE
 
     @Provides
     @Singleton

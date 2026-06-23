@@ -3,6 +3,7 @@ package com.doximity.realtimewatchlist_krishna_doximity.ui.preview
 import com.doximity.realtimewatchlist_krishna_doximity.core.domain.model.ConnectionState
 import com.doximity.realtimewatchlist_krishna_doximity.core.domain.model.PriceStatus
 import com.doximity.realtimewatchlist_krishna_doximity.core.ui.model.UiText
+import com.doximity.realtimewatchlist_krishna_doximity.data.demo.DemoMarketCatalog
 import com.doximity.realtimewatchlist_krishna_doximity.domain.model.Instrument
 import com.doximity.realtimewatchlist_krishna_doximity.domain.model.SearchResult
 import com.doximity.realtimewatchlist_krishna_doximity.domain.model.WatchlistItem
@@ -11,9 +12,9 @@ import com.doximity.realtimewatchlist_krishna_doximity.ui.watchlist.WatchlistEnt
 import com.doximity.realtimewatchlist_krishna_doximity.ui.watchlist.WatchlistScreenState
 
 object PreviewSampleData {
-    val apple = Instrument("AAPL", "AAPL", "Apple Inc.", "Common Stock")
-    val microsoft = Instrument("MSFT", "MSFT", "Microsoft Corp.", "Common Stock")
-    val bitcoin = Instrument("BINANCE:BTCUSDT", "BTC/USDT", "Bitcoin / Tether", "Crypto")
+    val apple: Instrument = DemoMarketCatalog.apple
+    val microsoft: Instrument = DemoMarketCatalog.microsoft
+    val bitcoin: Instrument = DemoMarketCatalog.bitcoin
 
     val searchIdle = SearchUiState(
         query = "",

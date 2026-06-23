@@ -4,6 +4,9 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.Column
+import com.doximity.realtimewatchlist_krishna_doximity.BuildConfig
+import com.doximity.realtimewatchlist_krishna_doximity.core.ui.components.DemoModeBanner
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
@@ -37,34 +40,42 @@ fun HomeScreen() {
             restoreState = true
         }
     }
-    if (useRail) {
-        Row(modifier = Modifier.fillMaxSize()) {
-            HomeNavigationRail(
-                selectedRoute = currentDestination?.route,
-                onDestinationSelected = onDestinationSelected,
-            )
-            HomeNavHost(
-                navController = navController,
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxHeight()
-                    .background(PageBackground),
-            )
+
+    Column(modifier = Modifier.fillMaxSize()) {
+        if (BuildConfig.DEMO_MODE) {
+            DemoModeBanner()
         }
-    } else {
-        Scaffold(
-            containerColor = PageBackground,
-            bottomBar = {
-                HomeBottomBar(
+
+        if (useRail) {
+            Row(modifier = Modifier.weight(1f)) {
+                HomeNavigationRail(
                     selectedRoute = currentDestination?.route,
                     onDestinationSelected = onDestinationSelected,
                 )
-            },
-        ) { innerPadding ->
-            HomeNavHost(
-                navController = navController,
-                modifier = Modifier.padding(innerPadding),
-            )
+                HomeNavHost(
+                    navController = navController,
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxHeight()
+                        .background(PageBackground),
+                )
+            }
+        } else {
+            Scaffold(
+                modifier = Modifier.weight(1f),
+                containerColor = PageBackground,
+                bottomBar = {
+                    HomeBottomBar(
+                        selectedRoute = currentDestination?.route,
+                        onDestinationSelected = onDestinationSelected,
+                    )
+                },
+            ) { innerPadding ->
+                HomeNavHost(
+                    navController = navController,
+                    modifier = Modifier.padding(innerPadding),
+                )
+            }
         }
     }
 }

@@ -11,10 +11,14 @@ import com.doximity.realtimewatchlist_krishna_doximity.domain.model.Quote
 import com.doximity.realtimewatchlist_krishna_doximity.domain.model.WatchlistItem
 import com.doximity.realtimewatchlist_krishna_doximity.domain.repository.MarketDataRepository
 import com.doximity.realtimewatchlist_krishna_doximity.domain.repository.WatchlistRepository
+import com.doximity.realtimewatchlist_krishna_doximity.data.repository.FakeMarketDataRepository
 import com.doximity.realtimewatchlist_krishna_doximity.domain.usecase.AddToWatchlistUseCase
 import com.doximity.realtimewatchlist_krishna_doximity.domain.usecase.ObserveWatchlistSymbolsUseCase
 import com.doximity.realtimewatchlist_krishna_doximity.domain.usecase.SearchInstrumentsUseCase
 import com.doximity.realtimewatchlist_krishna_doximity.domain.usecase.SearchWithWatchlistUseCase
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -74,6 +78,33 @@ class SearchViewModelTest {
             viewModel.uiState.value.errorMessage,
         )
         assertTrue(viewModel.uiState.value.results.isEmpty())
+    }
+
+    @Test
+    fun demoModeSearch_returnsCatalogResults() = runTest(mainDispatcherRule.dispatcher) {
+        val applicationScope = CoroutineScope(SupervisorJob() + mainDispatcherRule.dispatcher)
+        try {
+            val watchlistRepository = FakeWatchlistRepositoryForTest()
+            val viewModel = SearchViewModel(
+                searchWithWatchlistUseCase = SearchWithWatchlistUseCase(
+                    SearchInstrumentsUseCase(FakeMarketDataRepository(applicationScope)),
+                    ObserveWatchlistSymbolsUseCase(watchlistRepository),
+                ),
+                addToWatchlistUseCase = AddToWatchlistUseCase(watchlistRepository),
+            )
+            backgroundScope.launch { viewModel.uiState.collect {} }
+
+            viewModel.onQueryChange("AAPL")
+            mainDispatcherRule.dispatcher.scheduler.advanceTimeBy(500)
+            advanceUntilIdle()
+
+            val state = viewModel.uiState.value
+            assertFalse(state.isSearching)
+            assertEquals(1, state.results.size)
+            assertEquals("AAPL", state.results.single().instrument.symbol)
+        } finally {
+            applicationScope.cancel()
+        }
     }
 
     @Test
@@ -143,13 +174,13 @@ class SearchViewModelTest {
 
         override suspend fun addInstrument(instrument: Instrument) {
             if (items.value.any { it.symbol == instrument.symbol }) return
-            items.value = items.value + WatchlistItem(
-                symbol = instrument.symbol,
-                displaySymbol = instrument.displaySymbol,
-                description = instrument.description,
-                type = instrument.type,
-                addedAtEpochMs = 0L,
-            )
+            items.value += WatchlistItem(
+                            symbol = instrument.symbol,
+                            displaySymbol = instrument.displaySymbol,
+                            description = instrument.description,
+                            type = instrument.type,
+                            addedAtEpochMs = 0L,
+                        )
         }
 
         override suspend fun removeInstrument(symbol: String) {

@@ -50,6 +50,29 @@ fun EmptyState(
 }
 
 @Composable
+fun DemoModeBanner(
+    modifier: Modifier = Modifier,
+) {
+    val bannerText = stringResource(R.string.demo_mode_banner)
+    Surface(
+        modifier = modifier
+            .fillMaxWidth()
+            .semantics { contentDescription = bannerText },
+        color = MaterialTheme.colorScheme.tertiaryContainer,
+    ) {
+        Text(
+            text = bannerText,
+            modifier = Modifier.padding(
+                horizontal = adaptiveContentPadding(),
+                vertical = adaptiveContentPadding() / 2,
+            ),
+            style = MaterialTheme.typography.labelLarge,
+            color = MaterialTheme.colorScheme.onTertiaryContainer,
+        )
+    }
+}
+
+@Composable
 fun ErrorBanner(
     message: String,
     modifier: Modifier = Modifier,
