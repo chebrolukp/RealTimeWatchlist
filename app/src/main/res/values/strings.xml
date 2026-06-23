@@ -8,7 +8,7 @@
     <!-- Search -->
     <string name="search_label">Search instruments</string>
     <string name="search_placeholder">AAPL, BTC, EUR/USD…</string>
-    <string name="search_hint">Search by ticker or company name. Results come from Finnhub.</string>
+    <string name="search_hint">Search by ticker or company name. </string>
     <string name="search_loading">Searching instruments</string>
     <string name="search_empty_title">Find an instrument</string>
     <string name="search_no_results_title">No results</string>

@@ -1,5 +1,6 @@
 package com.doximity.realtimewatchlist_krishna_doximity.ui.search
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -19,6 +20,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -30,10 +32,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.doximity.realtimewatchlist_krishna_doximity.R
@@ -44,6 +46,9 @@ import com.doximity.realtimewatchlist_krishna_doximity.core.ui.components.EmptyS
 import com.doximity.realtimewatchlist_krishna_doximity.core.ui.components.ErrorBanner
 import com.doximity.realtimewatchlist_krishna_doximity.core.ui.components.LoadingIndicator
 import com.doximity.realtimewatchlist_krishna_doximity.domain.model.Instrument
+import com.doximity.realtimewatchlist_krishna_doximity.ui.theme.CardBackground
+import com.doximity.realtimewatchlist_krishna_doximity.ui.theme.ListItemBackground
+import com.doximity.realtimewatchlist_krishna_doximity.ui.theme.PageBackground
 
 @Composable
 fun SearchScreen(
@@ -72,7 +77,9 @@ fun SearchContent(
     val searchLoadingMessage = stringResource(R.string.search_loading)
 
     AdaptiveContentContainer(
-        modifier = modifier,
+        modifier = modifier
+            .fillMaxSize()
+            .background(PageBackground),
         applyHorizontalPadding = false,
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
@@ -176,6 +183,7 @@ private fun SearchResultCard(
     val instrument = result.instrument
     val inWatchlistSuffix = stringResource(R.string.already_in_watchlist_suffix)
     Card(
+        colors = CardDefaults.cardColors(containerColor = CardBackground),
         modifier = Modifier
             .fillMaxWidth()
             .semantics(mergeDescendants = false) {
@@ -195,6 +203,8 @@ private fun SearchResultCard(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
+                .padding(2.dp)
+                .background(ListItemBackground)
                 .padding(adaptiveContentPadding()),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(adaptiveContentPadding()),
@@ -255,7 +265,7 @@ private fun AddToWatchlistButton(
             .size(48.dp)
             .semantics {
                 contentDescription = actionDescription
-                stateDescription = addedStateLabel
+                this[SemanticsProperties.StateDescription] = addedStateLabel
             },
         shape = RoundedCornerShape(8.dp),
         color = colorScheme.surfaceContainerLow,
@@ -267,11 +277,7 @@ private fun AddToWatchlistButton(
             Icon(
                 imageVector = if (isInWatchlist) Icons.Default.Check else Icons.Default.Add,
                 contentDescription = null,
-                tint = if (isInWatchlist) {
-                    colorScheme.onSurfaceVariant
-                } else {
-                    colorScheme.primary
-                },
+                tint = colorScheme.primary,
             )
         }
     }

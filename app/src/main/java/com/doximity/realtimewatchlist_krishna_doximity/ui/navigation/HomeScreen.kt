@@ -1,5 +1,6 @@
 package com.doximity.realtimewatchlist_krishna_doximity.ui.navigation
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
@@ -14,6 +15,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.doximity.realtimewatchlist_krishna_doximity.core.ui.adaptive.useNavigationRail
+import com.doximity.realtimewatchlist_krishna_doximity.ui.theme.PageBackground
 import com.doximity.realtimewatchlist_krishna_doximity.ui.search.SearchScreen
 import com.doximity.realtimewatchlist_krishna_doximity.ui.search.SearchViewModel
 import com.doximity.realtimewatchlist_krishna_doximity.ui.watchlist.WatchlistScreen
@@ -45,11 +47,13 @@ fun HomeScreen() {
                 navController = navController,
                 modifier = Modifier
                     .weight(1f)
-                    .fillMaxHeight(),
+                    .fillMaxHeight()
+                    .background(PageBackground),
             )
         }
     } else {
         Scaffold(
+            containerColor = PageBackground,
             bottomBar = {
                 HomeBottomBar(
                     selectedRoute = currentDestination?.route,

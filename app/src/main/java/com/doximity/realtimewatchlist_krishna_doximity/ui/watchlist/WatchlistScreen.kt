@@ -1,5 +1,6 @@
 package com.doximity.realtimewatchlist_krishna_doximity.ui.watchlist
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -16,6 +17,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -51,7 +53,10 @@ import com.doximity.realtimewatchlist_krishna_doximity.core.ui.util.formatChange
 import com.doximity.realtimewatchlist_krishna_doximity.core.ui.util.formatPercentChange
 import com.doximity.realtimewatchlist_krishna_doximity.core.ui.util.formatPrice
 import com.doximity.realtimewatchlist_krishna_doximity.core.ui.util.formatWatchlistEntryContentDescription
+import com.doximity.realtimewatchlist_krishna_doximity.ui.theme.CardBackground
 import com.doximity.realtimewatchlist_krishna_doximity.ui.theme.Error
+import com.doximity.realtimewatchlist_krishna_doximity.ui.theme.ListItemBackground
+import com.doximity.realtimewatchlist_krishna_doximity.ui.theme.PageBackground
 import com.doximity.realtimewatchlist_krishna_doximity.ui.theme.Tertiary
 
 @Composable
@@ -82,7 +87,9 @@ fun WatchlistContent(
     val watchlistLoadingMessage = stringResource(R.string.watchlist_loading)
 
     AdaptiveContentContainer(
-        modifier = modifier,
+        modifier = modifier
+            .fillMaxSize()
+            .background(PageBackground),
         applyHorizontalPadding = false,
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
@@ -194,6 +201,7 @@ private fun WatchlistItemCard(
     )
 
     Card(
+        colors = CardDefaults.cardColors(containerColor = CardBackground),
         modifier = Modifier
             .fillMaxWidth()
             .semantics(mergeDescendants = false) {
@@ -203,6 +211,8 @@ private fun WatchlistItemCard(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
+                .padding(2.dp)
+                .background(ListItemBackground)
                 .padding(adaptiveContentPadding()),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(adaptiveContentPadding() / 2),
@@ -277,6 +287,7 @@ private fun WatchlistItemCard(
                 Icon(
                     imageVector = Icons.Default.Delete,
                     contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
                 )
             }
         }

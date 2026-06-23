@@ -68,7 +68,10 @@ dependencies {
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.androidx.lifecycle.runtime.compose)
-    implementation(libs.androidx.navigation.compose)
+    implementation(libs.androidx.navigation.compose) {
+        exclude(group = "androidx.compose.material3", module = "material3-window-size-class")
+        exclude(group = "androidx.compose.material3", module = "material3-window-size-class-android")
+    }
     implementation(libs.androidx.hilt.navigation.compose)
     implementation(libs.google.fonts)
 

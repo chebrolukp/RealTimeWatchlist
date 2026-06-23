@@ -95,23 +95,8 @@ Unit tests focus on domain and presentation logic that does not require a device
 - Compose UI or instrumented end-to-end tests (optional per the brief)
 
 ### How to run
-
-From the project root:
-
-```bash
-./gradlew test
-```
-
-On Windows:
-
-```bash
-gradlew.bat test
-```
-
 In Android Studio: open the **Project** view, right-click `app/src/test/java` → **Run 'Tests in …'**.
 
-Test reports are written to `app/build/reports/tests/testDebugUnitTest/index.html`.
 
 ## AI / tooling assistance
-
-This project was implemented with assistance from Cursor (AI pair programming) for scaffolding, boilerplate, and documentation. Architectural decisions, tradeoffs, and final code structure were reviewed and intentionally kept minimal.
+This project was implemented with assistance from Cursor (AI pair programming) for scaffolding, boilerplate, and documentation. Architectural decisions, tradeoffs and final code structure were reviewed and intentionally kept minimal.
