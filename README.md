@@ -197,6 +197,5 @@ launcher, demo and live screenshots
   <img src="screenshots/launcher.png" width="250" height="500" alt="Search Screen"/>
   <img src="screenshots/demo-search.png" width="250" height="500"  alt="Watchlist Screen"/>
   <img src="screenshots/demo-watchlist.png" width="250" height="500"  alt="Demo Mode"/>
-<img src="screenshots/live-search.png" width="250" height="500"  alt="Watchlist Screen"/>
   <img src="screenshots/live-watchlist.png" width="250" height="500"  alt="Demo Mode"/>
 </p>
