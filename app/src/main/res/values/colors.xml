@@ -7,4 +7,13 @@
     <color name="teal_700">#FF018786</color>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+
+    <!-- App palette (shared with Compose / Glance widgets) -->
+    <color name="widget_primary">#FF004AC6</color>
+    <color name="widget_background">#FFF5F5F5</color>
+    <color name="widget_surface">#FFFFFFF0</color>
+    <color name="widget_on_surface">#FF131B2E</color>
+    <color name="widget_on_surface_variant">#FF434655</color>
+    <color name="widget_positive">#FF006242</color>
+    <color name="widget_negative">#FFBA1A1A</color>
 </resources>

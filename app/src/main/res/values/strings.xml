@@ -73,4 +73,15 @@
     <string name="error_finnhub_rate_limit">Finnhub rate limit exceeded (HTTP 429). Try again shortly.</string>
     <string name="error_finnhub_unauthorized">Invalid Finnhub API key. Verify FINNHUB_API_KEY in local.properties, then rebuild.</string>
     <string name="error_finnhub_forbidden">Quote not available for this symbol on your Finnhub plan.</string>
+
+    <!-- Widgets -->
+    <string name="widget_watchlist_description">Shows your top watchlist symbols with latest quotes.</string>
+    <string name="widget_quote_description">Shows the first watchlist symbol with its latest quote.</string>
+    <string name="widget_watchlist_title">Watchlist</string>
+    <string name="widget_quote_title">Top quote</string>
+    <string name="widget_loading">Loading…</string>
+    <string name="widget_empty_title">Watchlist is empty</string>
+    <string name="widget_empty_message">Open the app to add symbols.</string>
+    <string name="widget_refresh">Refresh quotes</string>
+    <string name="widget_price_unavailable">—</string>
 </resources>
