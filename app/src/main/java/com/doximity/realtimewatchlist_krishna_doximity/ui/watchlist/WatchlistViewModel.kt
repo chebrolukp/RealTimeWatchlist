@@ -27,6 +27,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import kotlin.math.ceil
 
 sealed interface ChartUiState {
     data object Loading : ChartUiState
@@ -49,7 +50,14 @@ data class WatchlistScreenState(
     val entries: List<WatchlistEntryUiModel> = emptyList(),
     val connectionState: ConnectionState = ConnectionState.Disconnected,
     val errorMessage: UiText? = null,
-)
+    val currentPage: Int = 0,
+    val totalPages: Int = 1,
+    val totalItems: Int = 0,
+) {
+    val canGoToPreviousPage: Boolean get() = currentPage > 0
+    val canGoToNextPage: Boolean get() = currentPage < totalPages - 1
+    val showPagination: Boolean get() = totalItems > WatchlistViewModel.PAGE_SIZE
+}
 
 @HiltViewModel
 class WatchlistViewModel @Inject constructor(
@@ -61,6 +69,7 @@ class WatchlistViewModel @Inject constructor(
 
     private val isRefreshing = MutableStateFlow(false)
     private val chartStates = MutableStateFlow<Map<String, ChartUiState>>(emptyMap())
+    private val pageIndex = MutableStateFlow(0)
 
     private val overviewFlow = observeWatchlistWithPricesUseCase()
 
@@ -68,8 +77,13 @@ class WatchlistViewModel @Inject constructor(
         overviewFlow,
         isRefreshing,
         chartStates,
-    ) { overview, refreshing, charts ->
-        overview.toUiState(refreshing = refreshing, charts = charts)
+        pageIndex,
+    ) { overview, refreshing, charts, page ->
+        overview.toUiState(
+            refreshing = refreshing,
+            charts = charts,
+            requestedPage = page,
+        )
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
@@ -79,14 +93,28 @@ class WatchlistViewModel @Inject constructor(
     init {
         viewModelScope.launch {
             overviewFlow
-                .map { overview ->
-                    overview.entries.associate { entry ->
-                        entry.item.symbol to entry.item.type
-                    }
-                }
+                .map { overview -> overview.entries.map { it.item.symbol }.toSet() }
                 .distinctUntilChanged()
-                .collectLatest { symbolTypes ->
-                    syncCharts(symbolTypes = symbolTypes, force = false)
+                .collect { symbols ->
+                    val maxPage = maxPageIndex(symbols.size)
+                    pageIndex.update { current -> current.coerceAtMost(maxPage) }
+                    chartStates.update { charts -> charts.filterKeys { it in symbols } }
+                }
+        }
+
+        viewModelScope.launch {
+            combine(
+                overviewFlow.map { overview ->
+                    overview.entries.map { it.item.symbol to it.item.type }
+                },
+                pageIndex,
+            ) { symbolTypes, page ->
+                val safePage = page.coerceAtMost(maxPageIndex(symbolTypes.size))
+                pageSlice(symbolTypes, safePage).toMap()
+            }
+                .distinctUntilChanged()
+                .collectLatest { visibleSymbolTypes ->
+                    syncCharts(symbolTypes = visibleSymbolTypes, force = false)
                 }
         }
     }
@@ -96,10 +124,10 @@ class WatchlistViewModel @Inject constructor(
             isRefreshing.update { true }
             try {
                 refreshWatchlistUseCase()
-                val symbolTypes = uiState.value.entries.associate { entry ->
+                val visibleSymbolTypes = uiState.value.entries.associate { entry ->
                     entry.item.symbol to entry.item.type
                 }
-                syncCharts(symbolTypes = symbolTypes, force = true)
+                syncCharts(symbolTypes = visibleSymbolTypes, force = true)
             } finally {
                 isRefreshing.update { false }
             }
@@ -110,20 +138,31 @@ class WatchlistViewModel @Inject constructor(
         removeFromWatchlistUseCase(symbol)
     }
 
+    fun nextPage() {
+        pageIndex.update { current ->
+            val maxPage = (uiState.value.totalPages - 1).coerceAtLeast(0)
+            (current + 1).coerceAtMost(maxPage)
+        }
+    }
+
+    fun previousPage() {
+        pageIndex.update { current -> (current - 1).coerceAtLeast(0) }
+    }
+
     private suspend fun syncCharts(
         symbolTypes: Map<String, String>,
         force: Boolean,
     ) {
+        if (symbolTypes.isEmpty()) return
+
         chartStates.update { current ->
-            val retained = current.filterKeys { it in symbolTypes.keys }
-            val next = if (force) {
-                symbolTypes.keys.associateWith { ChartUiState.Loading }
+            if (force) {
+                current + symbolTypes.keys.associateWith { ChartUiState.Loading }
             } else {
-                retained + symbolTypes.keys
-                    .filter { it !in retained }
+                current + symbolTypes.keys
+                    .filter { symbol -> current[symbol] !is ChartUiState.Ready }
                     .associateWith { ChartUiState.Loading }
             }
-            next
         }
 
         val symbolsToLoad = if (force) {
@@ -163,25 +202,51 @@ class WatchlistViewModel @Inject constructor(
     private fun WatchlistOverview.toUiState(
         refreshing: Boolean,
         charts: Map<String, ChartUiState>,
+        requestedPage: Int,
     ): WatchlistScreenState {
+        val allEntries = entries.map { entry ->
+            WatchlistEntryUiModel(
+                item = entry.item,
+                price = entry.price,
+                change = entry.change,
+                percentChange = entry.percentChange,
+                status = entry.status,
+                chart = (charts[entry.item.symbol] ?: ChartUiState.Loading)
+                    .withLivePrice(entry.price),
+            )
+        }
+        val totalItems = allEntries.size
+        val totalPages = totalPagesFor(totalItems)
+        val currentPage = requestedPage.coerceIn(0, (totalPages - 1).coerceAtLeast(0))
+        val pageEntries = pageSlice(allEntries, currentPage)
+
         return WatchlistScreenState(
             isLoading = false,
             isRefreshing = refreshing,
-            entries = entries.map { entry ->
-                WatchlistEntryUiModel(
-                    item = entry.item,
-                    price = entry.price,
-                    change = entry.change,
-                    percentChange = entry.percentChange,
-                    status = entry.status,
-                    chart = (charts[entry.item.symbol] ?: ChartUiState.Loading)
-                        .withLivePrice(entry.price),
-                )
-            },
+            entries = pageEntries,
             connectionState = connectionState,
             errorMessage = error?.toUiText(),
+            currentPage = currentPage,
+            totalPages = totalPages,
+            totalItems = totalItems,
         )
     }
+
+    companion object {
+        const val PAGE_SIZE = 5
+    }
+}
+
+private fun totalPagesFor(totalItems: Int): Int =
+    if (totalItems <= 0) 1 else ceil(totalItems / WatchlistViewModel.PAGE_SIZE.toDouble()).toInt()
+
+private fun maxPageIndex(totalItems: Int): Int =
+    (totalPagesFor(totalItems) - 1).coerceAtLeast(0)
+
+private fun <T> pageSlice(items: List<T>, page: Int): List<T> {
+    val start = page * WatchlistViewModel.PAGE_SIZE
+    if (start >= items.size) return emptyList()
+    return items.subList(start, minOf(start + WatchlistViewModel.PAGE_SIZE, items.size))
 }
 
 /** Keeps the historical series intact and pins the tip to the latest live quote. */

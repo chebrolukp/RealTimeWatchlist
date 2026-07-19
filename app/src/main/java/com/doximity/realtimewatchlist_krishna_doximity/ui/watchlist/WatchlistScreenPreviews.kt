@@ -52,3 +52,15 @@ private fun WatchlistScreenReconnectingPreview() {
         )
     }
 }
+
+@ScreenPreview
+@Composable
+private fun WatchlistScreenPaginatedPreview() {
+    RealtimeWatchListKrishnaDoximityTheme {
+        WatchlistContent(
+            uiState = PreviewSampleData.watchlistPaginatedPage1,
+            onRemove = {},
+            onRefresh = {},
+        )
+    }
+}

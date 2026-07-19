@@ -15,6 +15,8 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -70,6 +72,8 @@ fun WatchlistScreen(
         uiState = uiState,
         onRemove = viewModel::removeSymbol,
         onRefresh = viewModel::refresh,
+        onPreviousPage = viewModel::previousPage,
+        onNextPage = viewModel::nextPage,
         modifier = modifier,
     )
 }
@@ -80,6 +84,8 @@ fun WatchlistContent(
     uiState: WatchlistScreenState,
     onRemove: (String) -> Unit,
     onRefresh: () -> Unit,
+    onPreviousPage: () -> Unit = {},
+    onNextPage: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     val contentPadding = adaptiveContentPadding()
@@ -94,7 +100,7 @@ fun WatchlistContent(
         applyHorizontalPadding = false,
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
-            if (uiState.entries.isNotEmpty()) {
+            if (uiState.totalItems > 0) {
                 ConnectionBanner(
                     label = connectionStateLabel(context, uiState.connectionState),
                     modifier = Modifier.padding(horizontal = contentPadding),
@@ -127,7 +133,7 @@ fun WatchlistContent(
                         modifier = Modifier.fillMaxSize(),
                     ) {
                         when {
-                            uiState.entries.isEmpty() -> {
+                            uiState.totalItems == 0 -> {
                                 EmptyState(
                                     title = stringResource(R.string.watchlist_empty_title),
                                     message = stringResource(R.string.watchlist_empty_message),
@@ -136,41 +142,60 @@ fun WatchlistContent(
                             }
 
                             else -> {
-                                val listPadding = PaddingValues(contentPadding)
-                                val listSpacing = Arrangement.spacedBy(contentPadding / 2)
+                                Column(modifier = Modifier.fillMaxSize()) {
+                                    val listPadding = PaddingValues(contentPadding)
+                                    val listSpacing = Arrangement.spacedBy(contentPadding / 2)
 
-                                if (columnCount > 1) {
-                                    LazyVerticalGrid(
-                                        columns = GridCells.Fixed(columnCount),
-                                        modifier = Modifier.fillMaxSize(),
-                                        contentPadding = listPadding,
-                                        horizontalArrangement = listSpacing,
-                                        verticalArrangement = listSpacing,
-                                    ) {
-                                        items(
-                                            items = uiState.entries,
-                                            key = { it.item.symbol },
-                                        ) { entry ->
-                                            WatchlistItemCard(
-                                                entry = entry,
-                                                connectionState = uiState.connectionState,
-                                                onRemove = onRemove,
-                                            )
+                                    if (columnCount > 1) {
+                                        LazyVerticalGrid(
+                                            columns = GridCells.Fixed(columnCount),
+                                            modifier = Modifier
+                                                .weight(1f)
+                                                .fillMaxWidth(),
+                                            contentPadding = listPadding,
+                                            horizontalArrangement = listSpacing,
+                                            verticalArrangement = listSpacing,
+                                        ) {
+                                            items(
+                                                items = uiState.entries,
+                                                key = { it.item.symbol },
+                                            ) { entry ->
+                                                WatchlistItemCard(
+                                                    entry = entry,
+                                                    connectionState = uiState.connectionState,
+                                                    onRemove = onRemove,
+                                                )
+                                            }
+                                        }
+                                    } else {
+                                        LazyColumn(
+                                            modifier = Modifier
+                                                .weight(1f)
+                                                .fillMaxWidth(),
+                                            contentPadding = listPadding,
+                                            verticalArrangement = listSpacing,
+                                        ) {
+                                            items(uiState.entries, key = { it.item.symbol }) { entry ->
+                                                WatchlistItemCard(
+                                                    entry = entry,
+                                                    connectionState = uiState.connectionState,
+                                                    onRemove = onRemove,
+                                                )
+                                            }
                                         }
                                     }
-                                } else {
-                                    LazyColumn(
-                                        modifier = Modifier.fillMaxSize(),
-                                        contentPadding = listPadding,
-                                        verticalArrangement = listSpacing,
-                                    ) {
-                                        items(uiState.entries, key = { it.item.symbol }) { entry ->
-                                            WatchlistItemCard(
-                                                entry = entry,
-                                                connectionState = uiState.connectionState,
-                                                onRemove = onRemove,
-                                            )
-                                        }
+
+                                    if (uiState.showPagination) {
+                                        WatchlistPaginationBar(
+                                            currentPage = uiState.currentPage,
+                                            totalPages = uiState.totalPages,
+                                            totalItems = uiState.totalItems,
+                                            canGoToPreviousPage = uiState.canGoToPreviousPage,
+                                            canGoToNextPage = uiState.canGoToNextPage,
+                                            onPreviousPage = onPreviousPage,
+                                            onNextPage = onNextPage,
+                                            modifier = Modifier.padding(contentPadding),
+                                        )
                                     }
                                 }
                             }
@@ -178,6 +203,65 @@ fun WatchlistContent(
                     }
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun WatchlistPaginationBar(
+    currentPage: Int,
+    totalPages: Int,
+    totalItems: Int,
+    canGoToPreviousPage: Boolean,
+    canGoToNextPage: Boolean,
+    onPreviousPage: () -> Unit,
+    onNextPage: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val pageLabel = stringResource(
+        R.string.watchlist_page_indicator,
+        currentPage + 1,
+        totalPages,
+    )
+    val pageDescription = stringResource(
+        R.string.a11y_watchlist_page,
+        currentPage + 1,
+        totalPages,
+        totalItems,
+    )
+
+    Row(
+        modifier = modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween,
+    ) {
+        IconButton(
+            onClick = onPreviousPage,
+            enabled = canGoToPreviousPage,
+            modifier = Modifier.minimumInteractiveComponentSize(),
+        ) {
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
+                contentDescription = stringResource(R.string.watchlist_previous_page),
+            )
+        }
+
+        Text(
+            text = pageLabel,
+            style = MaterialTheme.typography.labelLarge,
+            color = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.semantics { contentDescription = pageDescription },
+        )
+
+        IconButton(
+            onClick = onNextPage,
+            enabled = canGoToNextPage,
+            modifier = Modifier.minimumInteractiveComponentSize(),
+        ) {
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                contentDescription = stringResource(R.string.watchlist_next_page),
+            )
         }
     }
 }
