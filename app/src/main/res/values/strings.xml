@@ -84,4 +84,9 @@
     <string name="widget_empty_message">Open the app to add symbols.</string>
     <string name="widget_refresh">Refresh quotes</string>
     <string name="widget_price_unavailable">—</string>
+
+    <!-- Adaptive / list-detail -->
+    <string name="watchlist_detail_placeholder_title">Select a symbol</string>
+    <string name="watchlist_detail_placeholder_message">Choose an item from your watchlist to see price details and history.</string>
+    <string name="watchlist_navigate_back">Back to watchlist</string>
 </resources>

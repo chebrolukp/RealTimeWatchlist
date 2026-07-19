@@ -6,38 +6,53 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.material3.adaptive.WindowAdaptiveInfo
+import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-
-val LocalWindowWidthSizeClass = staticCompositionLocalOf { WindowWidthSizeClass.Compact }
+import androidx.window.core.layout.WindowSizeClass
 
 @Composable
-fun adaptiveContentPadding(): Dp = when (LocalWindowWidthSizeClass.current) {
-    WindowWidthSizeClass.Compact -> 16.dp
-    WindowWidthSizeClass.Medium -> 24.dp
-    WindowWidthSizeClass.Expanded -> 32.dp
+fun adaptiveWindowInfo(): WindowAdaptiveInfo = currentWindowAdaptiveInfo()
+
+@Composable
+fun adaptiveContentPadding(
+    adaptiveInfo: WindowAdaptiveInfo = adaptiveWindowInfo(),
+): Dp {
+    val sizeClass = adaptiveInfo.windowSizeClass
+    return when {
+        !sizeClass.isWidthAtLeastBreakpoint(WindowSizeClass.WIDTH_DP_MEDIUM_LOWER_BOUND) -> 16.dp
+        !sizeClass.isWidthAtLeastBreakpoint(WindowSizeClass.WIDTH_DP_EXPANDED_LOWER_BOUND) -> 24.dp
+        else -> 32.dp
+    }
 }
 
 @Composable
-fun adaptiveListColumnCount(): Int = when (LocalWindowWidthSizeClass.current) {
-    WindowWidthSizeClass.Expanded -> 2
-    else -> 1
+fun adaptiveListColumnCount(
+    adaptiveInfo: WindowAdaptiveInfo = adaptiveWindowInfo(),
+): Int {
+    val sizeClass = adaptiveInfo.windowSizeClass
+    return if (sizeClass.isWidthAtLeastBreakpoint(WindowSizeClass.WIDTH_DP_EXPANDED_LOWER_BOUND)) {
+        2
+    } else {
+        1
+    }
 }
 
 @Composable
-fun adaptiveMaxContentWidth(): Dp? = when (LocalWindowWidthSizeClass.current) {
-    WindowWidthSizeClass.Expanded -> 960.dp
-    WindowWidthSizeClass.Medium -> 720.dp
-    WindowWidthSizeClass.Compact -> null
+fun adaptiveMaxContentWidth(
+    adaptiveInfo: WindowAdaptiveInfo = adaptiveWindowInfo(),
+): Dp? {
+    val sizeClass = adaptiveInfo.windowSizeClass
+    return when {
+        sizeClass.isWidthAtLeastBreakpoint(WindowSizeClass.WIDTH_DP_EXPANDED_LOWER_BOUND) -> 960.dp
+        sizeClass.isWidthAtLeastBreakpoint(WindowSizeClass.WIDTH_DP_MEDIUM_LOWER_BOUND) -> 720.dp
+        else -> null
+    }
 }
-
-@Composable
-fun useNavigationRail(): Boolean =
-    LocalWindowWidthSizeClass.current != WindowWidthSizeClass.Compact
 
 @Composable
 fun AdaptiveContentContainer(

@@ -1,7 +1,7 @@
 package com.doximity.realtimewatchlist_krishna_doximity.ui.navigation
 
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Scaffold
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -30,13 +30,17 @@ class HomeNavigationTest {
     val composeRule = createComposeRule()
 
     @Test
-    fun bottomBar_showsWatchlistAndSearchTabs() {
+    fun navigationSuite_showsWatchlistAndSearchTabs() {
         composeRule.setContent {
             CompactPhoneTestContent {
-                HomeBottomBar(
-                    selectedRoute = AppDestination.Watchlist.route,
-                    onDestinationSelected = {},
-                )
+                NavigationSuiteScaffold(
+                    navigationSuiteItems = {
+                        homeNavigationItems(
+                            selectedRoute = AppDestination.Watchlist.route,
+                            onDestinationSelected = {},
+                        )
+                    },
+                ) {}
             }
         }
 
@@ -45,15 +49,19 @@ class HomeNavigationTest {
     }
 
     @Test
-    fun bottomBar_switchesSelectedDestination() {
+    fun navigationSuite_switchesSelectedDestination() {
         var selectedRoute = AppDestination.Watchlist.route
 
         composeRule.setContent {
             CompactPhoneTestContent {
-                HomeBottomBar(
-                    selectedRoute = selectedRoute,
-                    onDestinationSelected = { selectedRoute = it.route },
-                )
+                NavigationSuiteScaffold(
+                    navigationSuiteItems = {
+                        homeNavigationItems(
+                            selectedRoute = selectedRoute,
+                            onDestinationSelected = { selectedRoute = it.route },
+                        )
+                    },
+                ) {}
             }
         }
 
@@ -94,26 +102,26 @@ class HomeNavigationTest {
         composeRule.setContent {
             CompactPhoneTestContent {
                 var selectedRoute by remember { mutableStateOf(AppDestination.Watchlist.route) }
-                Scaffold(
-                    bottomBar = {
-                        HomeBottomBar(
+                NavigationSuiteScaffold(
+                    navigationSuiteItems = {
+                        homeNavigationItems(
                             selectedRoute = selectedRoute,
                             onDestinationSelected = { selectedRoute = it.route },
                         )
                     },
-                ) { innerPadding ->
+                ) {
                     when (selectedRoute) {
                         AppDestination.Watchlist.route -> WatchlistContent(
                             uiState = PreviewSampleData.watchlistWithEntries,
                             onRemove = {},
                             onRefresh = {},
-                            modifier = Modifier.padding(innerPadding),
+                            modifier = Modifier.fillMaxSize(),
                         )
                         AppDestination.Search.route -> SearchContent(
                             uiState = PreviewSampleData.searchResults,
                             onQueryChange = {},
                             onAdd = {},
-                            modifier = Modifier.padding(innerPadding),
+                            modifier = Modifier.fillMaxSize(),
                         )
                         else -> Unit
                     }
@@ -130,26 +138,26 @@ class HomeNavigationTest {
 
 @Composable
 private fun HomeTestShell(selectedRoute: String) {
-    Scaffold(
-        bottomBar = {
-            HomeBottomBar(
+    NavigationSuiteScaffold(
+        navigationSuiteItems = {
+            homeNavigationItems(
                 selectedRoute = selectedRoute,
                 onDestinationSelected = {},
             )
         },
-    ) { innerPadding ->
+    ) {
         when (selectedRoute) {
             AppDestination.Watchlist.route -> WatchlistContent(
                 uiState = PreviewSampleData.watchlistWithEntries,
                 onRemove = {},
                 onRefresh = {},
-                modifier = Modifier.padding(innerPadding),
+                modifier = Modifier.fillMaxSize(),
             )
             AppDestination.Search.route -> SearchContent(
                 uiState = PreviewSampleData.searchResults,
                 onQueryChange = {},
                 onAdd = {},
-                modifier = Modifier.padding(innerPadding),
+                modifier = Modifier.fillMaxSize(),
             )
             else -> Unit
         }

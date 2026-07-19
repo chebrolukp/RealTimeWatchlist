@@ -28,7 +28,7 @@ import com.doximity.realtimewatchlist_krishna_doximity.ui.theme.Tertiary
 fun PriceSparkline(
     chart: ChartUiState,
     displaySymbol: String,
-    modifier: Modifier = Modifier,
+    modifier: Modifier = Modifier.height(56.dp),
 ) {
     val chartDescription = when (chart) {
         ChartUiState.Loading -> stringResource(R.string.a11y_chart_loading, displaySymbol)
@@ -45,7 +45,6 @@ fun PriceSparkline(
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .height(56.dp)
             .semantics { contentDescription = chartDescription },
         contentAlignment = Alignment.Center,
     ) {

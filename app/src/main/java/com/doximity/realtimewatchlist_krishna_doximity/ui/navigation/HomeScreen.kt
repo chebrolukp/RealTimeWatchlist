@@ -1,14 +1,9 @@
 package com.doximity.realtimewatchlist_krishna_doximity.ui.navigation
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.Column
-import com.doximity.realtimewatchlist_krishna_doximity.BuildConfig
-import com.doximity.realtimewatchlist_krishna_doximity.core.ui.components.DemoModeBanner
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Scaffold
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
@@ -17,10 +12,11 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import com.doximity.realtimewatchlist_krishna_doximity.core.ui.adaptive.useNavigationRail
-import com.doximity.realtimewatchlist_krishna_doximity.ui.theme.PageBackground
+import com.doximity.realtimewatchlist_krishna_doximity.BuildConfig
+import com.doximity.realtimewatchlist_krishna_doximity.core.ui.components.DemoModeBanner
 import com.doximity.realtimewatchlist_krishna_doximity.ui.search.SearchScreen
 import com.doximity.realtimewatchlist_krishna_doximity.ui.search.SearchViewModel
+import com.doximity.realtimewatchlist_krishna_doximity.ui.theme.PageBackground
 import com.doximity.realtimewatchlist_krishna_doximity.ui.watchlist.WatchlistScreen
 import com.doximity.realtimewatchlist_krishna_doximity.ui.watchlist.WatchlistViewModel
 
@@ -29,7 +25,6 @@ fun HomeScreen() {
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = navBackStackEntry?.destination
-    val useRail = useNavigationRail()
 
     val onDestinationSelected: (AppDestination) -> Unit = { destination ->
         navController.navigate(destination.route) {
@@ -41,41 +36,25 @@ fun HomeScreen() {
         }
     }
 
-    Column(modifier = Modifier.fillMaxSize()) {
-        if (BuildConfig.DEMO_MODE) {
-            DemoModeBanner()
-        }
-
-        if (useRail) {
-            Row(modifier = Modifier.weight(1f)) {
-                HomeNavigationRail(
-                    selectedRoute = currentDestination?.route,
-                    onDestinationSelected = onDestinationSelected,
-                )
-                HomeNavHost(
-                    navController = navController,
-                    modifier = Modifier
-                        .weight(1f)
-                        .fillMaxHeight()
-                        .background(PageBackground),
-                )
+    NavigationSuiteScaffold(
+        navigationSuiteItems = {
+            homeNavigationItems(
+                selectedRoute = currentDestination?.route,
+                onDestinationSelected = onDestinationSelected,
+            )
+        },
+        containerColor = PageBackground,
+    ) {
+        Column(modifier = Modifier.fillMaxSize()) {
+            if (BuildConfig.DEMO_MODE) {
+                DemoModeBanner()
             }
-        } else {
-            Scaffold(
-                modifier = Modifier.weight(1f),
-                containerColor = PageBackground,
-                bottomBar = {
-                    HomeBottomBar(
-                        selectedRoute = currentDestination?.route,
-                        onDestinationSelected = onDestinationSelected,
-                    )
-                },
-            ) { innerPadding ->
-                HomeNavHost(
-                    navController = navController,
-                    modifier = Modifier.padding(innerPadding),
-                )
-            }
+            HomeNavHost(
+                navController = navController,
+                modifier = Modifier
+                    .weight(1f)
+                    .background(PageBackground),
+            )
         }
     }
 }

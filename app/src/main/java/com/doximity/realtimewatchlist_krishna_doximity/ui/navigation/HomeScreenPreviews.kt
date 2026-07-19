@@ -1,7 +1,7 @@
 package com.doximity.realtimewatchlist_krishna_doximity.ui.navigation
 
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Scaffold
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import com.doximity.realtimewatchlist_krishna_doximity.ui.preview.PreviewSampleData
@@ -14,14 +14,12 @@ import com.doximity.realtimewatchlist_krishna_doximity.ui.watchlist.WatchlistCon
 @Composable
 private fun HomeScreenWatchlistTabPreview() {
     RealtimeWatchListKrishnaDoximityTheme {
-        HomeScreenPreviewShell(
-            selectedRoute = AppDestination.Watchlist.route,
-        ) { padding ->
+        HomeScreenPreviewShell(selectedRoute = AppDestination.Watchlist.route) {
             WatchlistContent(
                 uiState = PreviewSampleData.watchlistWithEntries,
                 onRemove = {},
                 onRefresh = {},
-                modifier = padding,
+                modifier = Modifier.fillMaxSize(),
             )
         }
     }
@@ -31,14 +29,12 @@ private fun HomeScreenWatchlistTabPreview() {
 @Composable
 private fun HomeScreenSearchTabPreview() {
     RealtimeWatchListKrishnaDoximityTheme {
-        HomeScreenPreviewShell(
-            selectedRoute = AppDestination.Search.route,
-        ) { padding ->
+        HomeScreenPreviewShell(selectedRoute = AppDestination.Search.route) {
             SearchContent(
                 uiState = PreviewSampleData.searchResults,
                 onQueryChange = {},
                 onAdd = {},
-                modifier = padding,
+                modifier = Modifier.fillMaxSize(),
             )
         }
     }
@@ -47,16 +43,16 @@ private fun HomeScreenSearchTabPreview() {
 @Composable
 private fun HomeScreenPreviewShell(
     selectedRoute: String,
-    content: @Composable (Modifier) -> Unit,
+    content: @Composable () -> Unit,
 ) {
-    Scaffold(
-        bottomBar = {
-            HomeBottomBar(
+    NavigationSuiteScaffold(
+        navigationSuiteItems = {
+            homeNavigationItems(
                 selectedRoute = selectedRoute,
                 onDestinationSelected = {},
             )
         },
-    ) { innerPadding ->
-        content(Modifier.padding(innerPadding))
+    ) {
+        content()
     }
 }

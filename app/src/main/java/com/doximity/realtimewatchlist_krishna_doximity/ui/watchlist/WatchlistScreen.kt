@@ -1,20 +1,22 @@
 package com.doximity.realtimewatchlist_krishna_doximity.ui.watchlist
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Delete
@@ -25,11 +27,17 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
+import androidx.compose.material3.adaptive.layout.AnimatedPane
+import androidx.compose.material3.adaptive.layout.ListDetailPaneScaffold
+import androidx.compose.material3.adaptive.layout.ListDetailPaneScaffoldRole
+import androidx.compose.material3.adaptive.navigation.rememberListDetailPaneScaffoldNavigator
 import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -37,14 +45,14 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.doximity.realtimewatchlist_krishna_doximity.R
 import com.doximity.realtimewatchlist_krishna_doximity.core.domain.model.ConnectionState
 import com.doximity.realtimewatchlist_krishna_doximity.core.domain.model.PriceStatus
-import com.doximity.realtimewatchlist_krishna_doximity.R
 import com.doximity.realtimewatchlist_krishna_doximity.core.ui.adaptive.AdaptiveContentContainer
 import com.doximity.realtimewatchlist_krishna_doximity.core.ui.adaptive.adaptiveContentPadding
-import com.doximity.realtimewatchlist_krishna_doximity.core.ui.adaptive.adaptiveListColumnCount
 import com.doximity.realtimewatchlist_krishna_doximity.core.ui.components.ConnectionBanner
 import com.doximity.realtimewatchlist_krishna_doximity.core.ui.components.EmptyState
 import com.doximity.realtimewatchlist_krishna_doximity.core.ui.components.ErrorBanner
@@ -61,6 +69,7 @@ import com.doximity.realtimewatchlist_krishna_doximity.ui.theme.Error
 import com.doximity.realtimewatchlist_krishna_doximity.ui.theme.ListItemBackground
 import com.doximity.realtimewatchlist_krishna_doximity.ui.theme.PageBackground
 import com.doximity.realtimewatchlist_krishna_doximity.ui.theme.Tertiary
+import kotlinx.coroutines.launch
 
 @Composable
 fun WatchlistScreen(
@@ -78,7 +87,7 @@ fun WatchlistScreen(
     )
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3AdaptiveApi::class)
 @Composable
 fun WatchlistContent(
     uiState: WatchlistScreenState,
@@ -89,9 +98,14 @@ fun WatchlistContent(
     modifier: Modifier = Modifier,
 ) {
     val contentPadding = adaptiveContentPadding()
-    val columnCount = adaptiveListColumnCount()
     val context = LocalContext.current
     val watchlistLoadingMessage = stringResource(R.string.watchlist_loading)
+    val navigator = rememberListDetailPaneScaffoldNavigator<String>()
+    val scope = rememberCoroutineScope()
+
+    BackHandler(enabled = navigator.canNavigateBack()) {
+        scope.launch { navigator.navigateBack() }
+    }
 
     AdaptiveContentContainer(
         modifier = modifier
@@ -142,66 +156,214 @@ fun WatchlistContent(
                             }
 
                             else -> {
-                                Column(modifier = Modifier.fillMaxSize()) {
-                                    val listPadding = PaddingValues(contentPadding)
-                                    val listSpacing = Arrangement.spacedBy(contentPadding / 2)
-
-                                    if (columnCount > 1) {
-                                        LazyVerticalGrid(
-                                            columns = GridCells.Fixed(columnCount),
-                                            modifier = Modifier
-                                                .weight(1f)
-                                                .fillMaxWidth(),
-                                            contentPadding = listPadding,
-                                            horizontalArrangement = listSpacing,
-                                            verticalArrangement = listSpacing,
-                                        ) {
-                                            items(
-                                                items = uiState.entries,
-                                                key = { it.item.symbol },
-                                            ) { entry ->
-                                                WatchlistItemCard(
-                                                    entry = entry,
-                                                    connectionState = uiState.connectionState,
-                                                    onRemove = onRemove,
-                                                )
-                                            }
+                                ListDetailPaneScaffold(
+                                    directive = navigator.scaffoldDirective,
+                                    value = navigator.scaffoldValue,
+                                    listPane = {
+                                        AnimatedPane {
+                                            WatchlistListPane(
+                                                uiState = uiState,
+                                                selectedSymbol = navigator.currentDestination?.contentKey,
+                                                contentPadding = contentPadding,
+                                                onSelect = { symbol ->
+                                                    scope.launch {
+                                                        navigator.navigateTo(
+                                                            pane = ListDetailPaneScaffoldRole.Detail,
+                                                            contentKey = symbol,
+                                                        )
+                                                    }
+                                                },
+                                                onRemove = onRemove,
+                                                onPreviousPage = onPreviousPage,
+                                                onNextPage = onNextPage,
+                                            )
                                         }
-                                    } else {
-                                        LazyColumn(
-                                            modifier = Modifier
-                                                .weight(1f)
-                                                .fillMaxWidth(),
-                                            contentPadding = listPadding,
-                                            verticalArrangement = listSpacing,
-                                        ) {
-                                            items(uiState.entries, key = { it.item.symbol }) { entry ->
-                                                WatchlistItemCard(
-                                                    entry = entry,
-                                                    connectionState = uiState.connectionState,
-                                                    onRemove = onRemove,
-                                                )
+                                    },
+                                    detailPane = {
+                                        AnimatedPane {
+                                            val selectedSymbol = navigator.currentDestination?.contentKey
+                                            val selectedEntry = uiState.entries.find {
+                                                it.item.symbol == selectedSymbol
                                             }
+                                            WatchlistDetailPane(
+                                                entry = selectedEntry,
+                                                connectionState = uiState.connectionState,
+                                                canNavigateBack = navigator.canNavigateBack(),
+                                                onBack = {
+                                                    scope.launch { navigator.navigateBack() }
+                                                },
+                                                onRemove = onRemove,
+                                                contentPadding = contentPadding,
+                                            )
                                         }
-                                    }
-
-                                    if (uiState.showPagination) {
-                                        WatchlistPaginationBar(
-                                            currentPage = uiState.currentPage,
-                                            totalPages = uiState.totalPages,
-                                            totalItems = uiState.totalItems,
-                                            canGoToPreviousPage = uiState.canGoToPreviousPage,
-                                            canGoToNextPage = uiState.canGoToNextPage,
-                                            onPreviousPage = onPreviousPage,
-                                            onNextPage = onNextPage,
-                                            modifier = Modifier.padding(contentPadding),
-                                        )
-                                    }
-                                }
+                                    },
+                                )
                             }
                         }
                     }
                 }
+            }
+        }
+    }
+}
+
+@Composable
+private fun WatchlistListPane(
+    uiState: WatchlistScreenState,
+    selectedSymbol: String?,
+    contentPadding: Dp,
+    onSelect: (String) -> Unit,
+    onRemove: (String) -> Unit,
+    onPreviousPage: () -> Unit,
+    onNextPage: () -> Unit,
+) {
+    Column(modifier = Modifier.fillMaxSize()) {
+        LazyColumn(
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxWidth(),
+            contentPadding = PaddingValues(contentPadding),
+            verticalArrangement = Arrangement.spacedBy(contentPadding / 2),
+        ) {
+            items(uiState.entries, key = { it.item.symbol }) { entry ->
+                WatchlistItemCard(
+                    entry = entry,
+                    connectionState = uiState.connectionState,
+                    selected = entry.item.symbol == selectedSymbol,
+                    onClick = { onSelect(entry.item.symbol) },
+                    onRemove = onRemove,
+                )
+            }
+        }
+
+        if (uiState.showPagination) {
+            WatchlistPaginationBar(
+                currentPage = uiState.currentPage,
+                totalPages = uiState.totalPages,
+                totalItems = uiState.totalItems,
+                canGoToPreviousPage = uiState.canGoToPreviousPage,
+                canGoToNextPage = uiState.canGoToNextPage,
+                onPreviousPage = onPreviousPage,
+                onNextPage = onNextPage,
+                modifier = Modifier.padding(contentPadding),
+            )
+        }
+    }
+}
+
+@Composable
+private fun WatchlistDetailPane(
+    entry: WatchlistEntryUiModel?,
+    connectionState: ConnectionState,
+    canNavigateBack: Boolean,
+    onBack: () -> Unit,
+    onRemove: (String) -> Unit,
+    contentPadding: Dp,
+) {
+    if (entry == null) {
+        EmptyState(
+            title = stringResource(R.string.watchlist_detail_placeholder_title),
+            message = stringResource(R.string.watchlist_detail_placeholder_message),
+            modifier = Modifier.fillMaxSize(),
+        )
+        return
+    }
+
+    val context = LocalContext.current
+    val statusText = buildWatchlistStatusText(context, entry.status, connectionState)
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(contentPadding),
+        verticalArrangement = Arrangement.spacedBy(contentPadding / 2),
+    ) {
+        if (canNavigateBack) {
+            IconButton(
+                onClick = onBack,
+                modifier = Modifier.minimumInteractiveComponentSize(),
+            ) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = stringResource(R.string.watchlist_navigate_back),
+                )
+            }
+        }
+
+        Card(
+            colors = CardDefaults.cardColors(containerColor = CardBackground),
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(2.dp)
+                    .background(ListItemBackground)
+                    .padding(contentPadding),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.Top,
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = entry.item.displaySymbol,
+                            style = MaterialTheme.typography.headlineSmall,
+                            modifier = Modifier.semantics { heading() },
+                        )
+                        Text(
+                            text = entry.item.description,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = statusText,
+                            style = MaterialTheme.typography.labelMedium,
+                            color = statusColor(entry.status),
+                        )
+                    }
+
+                    IconButton(
+                        onClick = { onRemove(entry.item.symbol) },
+                        modifier = Modifier.minimumInteractiveComponentSize(),
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Delete,
+                            contentDescription = stringResource(
+                                R.string.remove_from_watchlist,
+                                entry.item.displaySymbol,
+                            ),
+                            tint = MaterialTheme.colorScheme.primary,
+                        )
+                    }
+                }
+
+                Text(
+                    text = entry.price?.let(::formatPrice) ?: "—",
+                    style = MaterialTheme.typography.displaySmall,
+                )
+                entry.change?.let { change ->
+                    val changeColor = if (change >= 0) Tertiary else Error
+                    Text(
+                        text = "${formatChange(change)} (${formatPercentChange(entry.percentChange ?: 0.0)})",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = changeColor,
+                    )
+                }
+
+                Text(
+                    text = stringResource(R.string.chart_range_30d),
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                PriceSparkline(
+                    chart = entry.chart,
+                    displaySymbol = entry.item.displaySymbol,
+                    modifier = Modifier.height(120.dp),
+                )
             }
         }
     }
@@ -270,6 +432,8 @@ private fun WatchlistPaginationBar(
 private fun WatchlistItemCard(
     entry: WatchlistEntryUiModel,
     connectionState: ConnectionState,
+    selected: Boolean,
+    onClick: () -> Unit,
     onRemove: (String) -> Unit,
 ) {
     val context = LocalContext.current
@@ -286,110 +450,88 @@ private fun WatchlistItemCard(
     )
 
     Card(
-        colors = CardDefaults.cardColors(containerColor = CardBackground),
+        colors = CardDefaults.cardColors(
+            containerColor = if (selected) {
+                MaterialTheme.colorScheme.primaryContainer
+            } else {
+                CardBackground
+            },
+        ),
         modifier = Modifier
             .fillMaxWidth()
             .semantics(mergeDescendants = false) {
                 contentDescription = entryDescription
-            },
+            }
+            .clickable(onClick = onClick),
     ) {
-        Column(
+        Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(2.dp)
-                .background(ListItemBackground)
-                .padding(adaptiveContentPadding()),
-            verticalArrangement = Arrangement.spacedBy(adaptiveContentPadding() / 2),
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(adaptiveContentPadding() / 2),
-            ) {
-                Column(
-                    modifier = Modifier.weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(4.dp),
-                ) {
-                    Text(
-                        text = entry.item.displaySymbol,
-                        style = MaterialTheme.typography.titleMedium,
-                        modifier = Modifier.semantics { heading() },
-                    )
-                    Text(
-                        text = entry.item.description,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 2,
-                    )
-                    Text(
-                        text = statusText,
-                        style = MaterialTheme.typography.labelSmall,
-                        color = statusColor(entry.status),
-                    )
-                }
-
-                Column(
-                    modifier = Modifier.weight(1f),
-                    horizontalAlignment = Alignment.End,
-                    verticalArrangement = Arrangement.spacedBy(4.dp),
-                ) {
-                    Text(
-                        text = entry.price?.let(::formatPrice) ?: "—",
-                        style = MaterialTheme.typography.titleMedium,
-                    )
-                    entry.change?.let { change ->
-                        val changePrefix = stringResource(
-                            if (change >= 0) R.string.price_up else R.string.price_down,
-                        )
-                        val changeColor = if (change >= 0) Tertiary else Error
-                        val formattedChange = formatChange(change)
-                        val formattedPercent = formatPercentChange(entry.percentChange ?: 0.0)
-                        val changeDescription = stringResource(
-                            R.string.a11y_price_change,
-                            changePrefix,
-                            formattedChange,
-                            formattedPercent,
-                        )
-                        Text(
-                            text = "$formattedChange ($formattedPercent)",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = changeColor,
-                            modifier = Modifier.semantics {
-                                contentDescription = changeDescription
-                            },
-                        )
-                    }
-                }
-
-                val removeDescription = stringResource(
-                    R.string.remove_from_watchlist,
-                    entry.item.displaySymbol,
+                .background(
+                    if (selected) {
+                        MaterialTheme.colorScheme.primaryContainer
+                    } else {
+                        ListItemBackground
+                    },
                 )
-                IconButton(
-                    onClick = { onRemove(entry.item.symbol) },
-                    modifier = Modifier
-                        .minimumInteractiveComponentSize()
-                        .semantics {
-                            contentDescription = removeDescription
-                        },
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Delete,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
+                .padding(adaptiveContentPadding()),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(adaptiveContentPadding() / 2),
+        ) {
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+                Text(
+                    text = entry.item.displaySymbol,
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.semantics { heading() },
+                )
+                Text(
+                    text = entry.item.description,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 2,
+                )
+                Text(
+                    text = statusText,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = statusColor(entry.status),
+                )
+            }
+
+            Column(
+                horizontalAlignment = Alignment.End,
+                verticalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+                Text(
+                    text = entry.price?.let(::formatPrice) ?: "—",
+                    style = MaterialTheme.typography.titleMedium,
+                )
+                entry.change?.let { change ->
+                    val changeColor = if (change >= 0) Tertiary else Error
+                    Text(
+                        text = formatPercentChange(entry.percentChange ?: 0.0),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = changeColor,
                     )
                 }
             }
 
-            Text(
-                text = stringResource(R.string.chart_range_30d),
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            PriceSparkline(
-                chart = entry.chart,
-                displaySymbol = entry.item.displaySymbol,
-            )
+            IconButton(
+                onClick = { onRemove(entry.item.symbol) },
+                modifier = Modifier.minimumInteractiveComponentSize(),
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Delete,
+                    contentDescription = stringResource(
+                        R.string.remove_from_watchlist,
+                        entry.item.displaySymbol,
+                    ),
+                    tint = MaterialTheme.colorScheme.primary,
+                )
+            }
         }
     }
 }

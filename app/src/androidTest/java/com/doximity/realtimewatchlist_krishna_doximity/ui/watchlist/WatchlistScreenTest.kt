@@ -5,7 +5,6 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.junit4.createComposeRule
-import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -75,7 +74,7 @@ class WatchlistScreenTest {
     }
 
     @Test
-    fun watchlistWithEntries_showsHistoricalChartLabels() {
+    fun watchlistWithEntries_showsHistoricalChartInDetail() {
         composeRule.setContent {
             CompactPhoneTestContent {
                 WatchlistContent(
@@ -86,12 +85,9 @@ class WatchlistScreenTest {
             }
         }
 
-        composeRule.onAllNodesWithText("30-day history")[0].assertIsDisplayed()
+        composeRule.onNodeWithText("AAPL").performClick()
+        composeRule.onNodeWithText("30-day history").assertIsDisplayed()
         composeRule.onNodeWithContentDescription("30-day chart for AAPL trending up")
-            .assertIsDisplayed()
-        composeRule.onNodeWithContentDescription("30-day chart for MSFT trending down")
-            .assertIsDisplayed()
-        composeRule.onNodeWithContentDescription("30-day chart unavailable for BTC/USDT")
             .assertIsDisplayed()
     }
 
