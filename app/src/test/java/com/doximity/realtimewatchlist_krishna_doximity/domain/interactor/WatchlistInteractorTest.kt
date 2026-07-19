@@ -5,6 +5,7 @@ package com.doximity.realtimewatchlist_krishna_doximity.domain.interactor
 import app.cash.turbine.test
 import com.doximity.realtimewatchlist_krishna_doximity.core.domain.model.ConnectionState
 import com.doximity.realtimewatchlist_krishna_doximity.core.domain.model.PriceStatus
+import com.doximity.realtimewatchlist_krishna_doximity.domain.model.HistoricalPrices
 import com.doximity.realtimewatchlist_krishna_doximity.domain.model.Instrument
 import com.doximity.realtimewatchlist_krishna_doximity.domain.model.PriceUpdate
 import com.doximity.realtimewatchlist_krishna_doximity.domain.model.Quote
@@ -155,6 +156,18 @@ class WatchlistInteractorTest {
         override suspend fun getQuote(symbol: String): Result<Quote> =
             quotes[symbol]?.let { Result.success(it) }
                 ?: Result.failure(IllegalStateException("Missing quote"))
+
+        override suspend fun getHistoricalPrices(
+            symbol: String,
+            instrumentType: String,
+            days: Int,
+        ): Result<HistoricalPrices> =
+            Result.success(
+                HistoricalPrices(
+                    symbol = symbol,
+                    points = emptyList(),
+                ),
+            )
 
         override fun updateLiveSubscriptions(symbols: Set<String>) = Unit
 

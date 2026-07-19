@@ -29,6 +29,8 @@
     <string name="price_down">Down</string>
     <string name="reconnecting_with_status">Reconnecting — %1$s</string>
     <string name="price_may_be_stale">Price may be stale</string>
+    <string name="chart_range_30d">30-day history</string>
+    <string name="chart_unavailable">Chart unavailable</string>
 
     <!-- Connection state -->
     <string name="connection_disconnected">Disconnected</string>
@@ -55,6 +57,10 @@
     <string name="a11y_price_status">Price status %1$s.</string>
     <string name="a11y_watchlist_entry">%1$s, %2$s. %3$s. %4$s. %5$s</string>
     <string name="a11y_price_change">%1$s %2$s, %3$s</string>
+    <string name="a11y_chart_loading">Loading 30-day chart for %1$s</string>
+    <string name="a11y_chart_unavailable">30-day chart unavailable for %1$s</string>
+    <string name="a11y_chart_up">30-day chart for %1$s trending up</string>
+    <string name="a11y_chart_down">30-day chart for %1$s trending down</string>
 
     <!-- API errors -->
     <string name="error_generic">Something went wrong. Please try again.</string>

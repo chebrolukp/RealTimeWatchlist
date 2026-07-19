@@ -2,8 +2,8 @@ package com.doximity.realtimewatchlist_krishna_doximity.ui.search
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.doximity.realtimewatchlist_krishna_doximity.core.error.toUiText
 import com.doximity.realtimewatchlist_krishna_doximity.core.ui.model.UiText
-import com.doximity.realtimewatchlist_krishna_doximity.core.ui.util.toUiText
 import com.doximity.realtimewatchlist_krishna_doximity.domain.model.Instrument
 import com.doximity.realtimewatchlist_krishna_doximity.domain.model.SearchResult
 import com.doximity.realtimewatchlist_krishna_doximity.domain.usecase.AddToWatchlistUseCase

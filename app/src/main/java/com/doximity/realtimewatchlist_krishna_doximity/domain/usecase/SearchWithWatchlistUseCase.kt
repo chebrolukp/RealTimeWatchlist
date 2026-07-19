@@ -57,11 +57,8 @@ class SearchWithWatchlistUseCase @Inject constructor(
 
     private sealed interface SearchQueryState {
         data object Idle : SearchQueryState
-
         data object Loading : SearchQueryState
-
         data class Loaded(val instruments: List<Instrument>) : SearchQueryState
-
         data class Failed(val error: Throwable) : SearchQueryState
     }
 

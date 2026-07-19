@@ -5,6 +5,7 @@ package com.doximity.realtimewatchlist_krishna_doximity.ui.search
 import com.doximity.realtimewatchlist_krishna_doximity.MainDispatcherRule
 import com.doximity.realtimewatchlist_krishna_doximity.core.domain.model.ConnectionState
 import com.doximity.realtimewatchlist_krishna_doximity.core.ui.model.UiText
+import com.doximity.realtimewatchlist_krishna_doximity.domain.model.HistoricalPrices
 import com.doximity.realtimewatchlist_krishna_doximity.domain.model.Instrument
 import com.doximity.realtimewatchlist_krishna_doximity.domain.model.PriceUpdate
 import com.doximity.realtimewatchlist_krishna_doximity.domain.model.Quote
@@ -158,6 +159,18 @@ class SearchViewModelTest {
                     percentChange = 1.0,
                     previousClose = 99.0,
                     timestampSeconds = 1L,
+                ),
+            )
+
+        override suspend fun getHistoricalPrices(
+            symbol: String,
+            instrumentType: String,
+            days: Int,
+        ): Result<HistoricalPrices> =
+            Result.success(
+                HistoricalPrices(
+                    symbol = symbol,
+                    points = emptyList(),
                 ),
             )
 

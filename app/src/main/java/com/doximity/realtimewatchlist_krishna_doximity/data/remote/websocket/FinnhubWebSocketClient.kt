@@ -35,7 +35,7 @@ class FinnhubWebSocketClient @Inject constructor(
     private val _connectionState = MutableStateFlow(ConnectionState.Disconnected)
     val connectionState: StateFlow<ConnectionState> = _connectionState.asStateFlow()
 
-    private val _priceUpdates = MutableSharedFlow<PriceUpdate>(extraBufferCapacity = 128)
+    private val _priceUpdates = MutableSharedFlow<PriceUpdate>(extraBufferCapacity = 128)//tryEmit +
     val priceUpdates: SharedFlow<PriceUpdate> = _priceUpdates.asSharedFlow()
 
     private var webSocket: WebSocket? = null
@@ -116,7 +116,7 @@ class FinnhubWebSocketClient @Inject constructor(
 
                 override fun onMessage(webSocket: WebSocket, text: String) {
                     parseMessage(text)?.forEach { update ->
-                        _priceUpdates.tryEmit(update)
+                        _priceUpdates.tryEmit(update) //not a coroutine so launch{emit} blocks so use tryEmit(emit and forget)
                     }
                 }
 
@@ -152,7 +152,7 @@ class FinnhubWebSocketClient @Inject constructor(
         if (reconnectJob?.isActive == true) return
 
         _connectionState.value = ConnectionState.Reconnecting
-        val baseDelay = if (rateLimited) RATE_LIMIT_RECONNECT_DELAY_MS else BASE_RECONNECT_DELAY_MS
+        val baseDelay = if (rateLimited) RATE_LIMIT_RECONNECT_DELAY_MS else BASE_RECONNECT_DELAY_MS//too many requests vs normal time
         val delayMs = minOf(
             MAX_RECONNECT_DELAY_MS,
             baseDelay * (1 shl reconnectAttempt.coerceAtMost(5)),
@@ -180,7 +180,7 @@ class FinnhubWebSocketClient @Inject constructor(
             json.decodeFromString(WebSocketMessageDto.serializer(), text)
         }.getOrNull() ?: return null
 
-        if (message.type != "trade") return null
+        if (message.type != "trade") return null //only handle trade messages
         return message.data.orEmpty().map { it.toDomain() }
     }
 

@@ -1,7 +1,9 @@
 package com.doximity.realtimewatchlist_krishna_doximity.data.repository
 
 import com.doximity.realtimewatchlist_krishna_doximity.core.domain.model.ConnectionState
+import com.doximity.realtimewatchlist_krishna_doximity.data.demo.DemoHistoricalPrices
 import com.doximity.realtimewatchlist_krishna_doximity.data.demo.DemoMarketCatalog
+import com.doximity.realtimewatchlist_krishna_doximity.domain.model.HistoricalPrices
 import com.doximity.realtimewatchlist_krishna_doximity.domain.model.Instrument
 import com.doximity.realtimewatchlist_krishna_doximity.domain.model.PriceUpdate
 import com.doximity.realtimewatchlist_krishna_doximity.domain.model.Quote
@@ -49,6 +51,17 @@ class FakeMarketDataRepository @Inject constructor(
             DemoMarketCatalog.quoteFor(symbol)
                 ?: throw DemoQuoteUnavailableException(symbol)
         }
+
+    override suspend fun getHistoricalPrices(
+        symbol: String,
+        instrumentType: String,
+        days: Int,
+    ): Result<HistoricalPrices> = runCatching {
+        delay(HISTORY_DELAY_MS)
+        val quote = DemoMarketCatalog.quoteFor(symbol)
+            ?: throw DemoQuoteUnavailableException(symbol)
+        DemoHistoricalPrices.forSymbol(symbol = symbol, quote = quote, days = days)
+    }
 
     override fun updateLiveSubscriptions(symbols: Set<String>) {
         subscribedSymbols.clear()
@@ -112,6 +125,7 @@ class FakeMarketDataRepository @Inject constructor(
     private companion object {
         const val SEARCH_DELAY_MS = 150L
         const val QUOTE_DELAY_MS = 100L
+        const val HISTORY_DELAY_MS = 120L
         const val TICK_INTERVAL_MS = 2_000L
         const val JITTER_PERCENT = 0.005
         const val MIN_PRICE = 0.01

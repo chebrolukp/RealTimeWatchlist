@@ -27,6 +27,13 @@ data class QuoteResponseDto(
 )
 
 @Serializable
+data class CandleResponseDto(
+    @SerialName("c") val closePrices: List<Double> = emptyList(),
+    @SerialName("t") val timestampsSeconds: List<Long> = emptyList(),
+    @SerialName("s") val status: String = "",
+)
+
+@Serializable
 data class WebSocketMessageDto(
     val type: String? = null,
     val data: List<TradeDto>? = null,

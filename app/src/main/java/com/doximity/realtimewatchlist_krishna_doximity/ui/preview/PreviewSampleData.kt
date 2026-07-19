@@ -8,6 +8,7 @@ import com.doximity.realtimewatchlist_krishna_doximity.domain.model.Instrument
 import com.doximity.realtimewatchlist_krishna_doximity.domain.model.SearchResult
 import com.doximity.realtimewatchlist_krishna_doximity.domain.model.WatchlistItem
 import com.doximity.realtimewatchlist_krishna_doximity.ui.search.SearchUiState
+import com.doximity.realtimewatchlist_krishna_doximity.ui.watchlist.ChartUiState
 import com.doximity.realtimewatchlist_krishna_doximity.ui.watchlist.WatchlistEntryUiModel
 import com.doximity.realtimewatchlist_krishna_doximity.ui.watchlist.WatchlistScreenState
 
@@ -73,6 +74,9 @@ object PreviewSampleData {
                 change = 2.15,
                 percentChange = 1.14,
                 status = PriceStatus.Live,
+                chart = ChartUiState.Ready(
+                    prices = listOf(180f, 182f, 179f, 185f, 188f, 186f, 190f),
+                ),
             ),
             WatchlistEntryUiModel(
                 item = WatchlistItem(
@@ -86,6 +90,9 @@ object PreviewSampleData {
                 change = -1.80,
                 percentChange = -0.43,
                 status = PriceStatus.Live,
+                chart = ChartUiState.Ready(
+                    prices = listOf(430f, 428f, 426f, 424f, 422f, 421f, 420f),
+                ),
             ),
             WatchlistEntryUiModel(
                 item = WatchlistItem(
@@ -99,6 +106,7 @@ object PreviewSampleData {
                 change = null,
                 percentChange = null,
                 status = PriceStatus.Unavailable,
+                chart = ChartUiState.Unavailable,
             ),
         ),
     )

@@ -80,6 +80,33 @@ class FakeMarketDataRepositoryTest {
     }
 
     @Test
+    fun getHistoricalPrices_knownSymbol_returnsSeries() = runRepositoryTest { repository ->
+        val result = repository.getHistoricalPrices(
+            symbol = "AAPL",
+            instrumentType = "Common Stock",
+            days = 30,
+        )
+        advanceUntilIdle()
+
+        assertTrue(result.isSuccess)
+        val history = result.getOrThrow()
+        assertEquals("AAPL", history.symbol)
+        assertEquals(30, history.points.size)
+    }
+
+    @Test
+    fun getHistoricalPrices_unknownSymbol_returnsFailure() = runRepositoryTest { repository ->
+        val result = repository.getHistoricalPrices(
+            symbol = "UNKNOWN",
+            instrumentType = "Common Stock",
+            days = 30,
+        )
+        advanceUntilIdle()
+
+        assertTrue(result.isFailure)
+    }
+
+    @Test
     fun emitPriceUpdate_forwardsToPriceUpdatesFlow() = runRepositoryTest { repository ->
         var received: PriceUpdate? = null
         val collectJob = backgroundScope.launch {

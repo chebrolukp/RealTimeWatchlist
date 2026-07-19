@@ -1,6 +1,7 @@
 package com.doximity.realtimewatchlist_krishna_doximity.domain.repository
 
 import com.doximity.realtimewatchlist_krishna_doximity.core.domain.model.ConnectionState
+import com.doximity.realtimewatchlist_krishna_doximity.domain.model.HistoricalPrices
 import com.doximity.realtimewatchlist_krishna_doximity.domain.model.Instrument
 import com.doximity.realtimewatchlist_krishna_doximity.domain.model.PriceUpdate
 import com.doximity.realtimewatchlist_krishna_doximity.domain.model.Quote
@@ -14,6 +15,12 @@ interface MarketDataRepository {
 
     suspend fun searchInstruments(query: String): Result<List<Instrument>>
     suspend fun getQuote(symbol: String): Result<Quote>
+    suspend fun getHistoricalPrices(
+        symbol: String,
+        instrumentType: String,
+        days: Int = 30,
+    ): Result<HistoricalPrices>
+
     fun updateLiveSubscriptions(symbols: Set<String>)
 }
 

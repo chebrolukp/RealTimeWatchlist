@@ -1,6 +1,8 @@
 package com.doximity.realtimewatchlist_krishna_doximity.data.remote.dto
 
+import com.doximity.realtimewatchlist_krishna_doximity.domain.model.HistoricalPrices
 import com.doximity.realtimewatchlist_krishna_doximity.domain.model.Instrument
+import com.doximity.realtimewatchlist_krishna_doximity.domain.model.PricePoint
 import com.doximity.realtimewatchlist_krishna_doximity.domain.model.PriceUpdate
 import com.doximity.realtimewatchlist_krishna_doximity.domain.model.Quote
 
@@ -24,3 +26,17 @@ fun TradeDto.toDomain(): PriceUpdate = PriceUpdate(
     price = price,
     timestampMs = timestampMs,
 )
+
+fun CandleResponseDto.toHistoricalPrices(symbol: String): HistoricalPrices {
+    if (!status.equals("ok", ignoreCase = true)) {
+        return HistoricalPrices(symbol = symbol, points = emptyList())
+    }
+    val count = minOf(closePrices.size, timestampsSeconds.size)
+    val points = List(count) { index ->
+        PricePoint(
+            timestampMs = timestampsSeconds[index] * 1_000L,
+            price = closePrices[index],
+        )
+    }
+    return HistoricalPrices(symbol = symbol, points = points)
+}

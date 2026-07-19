@@ -209,88 +209,103 @@ private fun WatchlistItemCard(
                 contentDescription = entryDescription
             },
     ) {
-        Row(
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(2.dp)
                 .background(ListItemBackground)
                 .padding(adaptiveContentPadding()),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(adaptiveContentPadding() / 2),
+            verticalArrangement = Arrangement.spacedBy(adaptiveContentPadding() / 2),
         ) {
-            Column(
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(4.dp),
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(adaptiveContentPadding() / 2),
             ) {
-                Text(
-                    text = entry.item.displaySymbol,
-                    style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.semantics { heading() },
-                )
-                Text(
-                    text = entry.item.description,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 2,
-                )
-                Text(
-                    text = statusText,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = statusColor(entry.status),
-                )
-            }
-
-            Column(
-                modifier = Modifier.weight(1f),
-                horizontalAlignment = Alignment.End,
-                verticalArrangement = Arrangement.spacedBy(4.dp),
-            ) {
-                Text(
-                    text = entry.price?.let(::formatPrice) ?: "—",
-                    style = MaterialTheme.typography.titleMedium,
-                )
-                entry.change?.let { change ->
-                    val changePrefix = stringResource(
-                        if (change >= 0) R.string.price_up else R.string.price_down,
-                    )
-                    val changeColor = if (change >= 0) Tertiary else Error
-                    val formattedChange = formatChange(change)
-                    val formattedPercent = formatPercentChange(entry.percentChange ?: 0.0)
-                    val changeDescription = stringResource(
-                        R.string.a11y_price_change,
-                        changePrefix,
-                        formattedChange,
-                        formattedPercent,
+                Column(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
+                    Text(
+                        text = entry.item.displaySymbol,
+                        style = MaterialTheme.typography.titleMedium,
+                        modifier = Modifier.semantics { heading() },
                     )
                     Text(
-                        text = "$formattedChange ($formattedPercent)",
+                        text = entry.item.description,
                         style = MaterialTheme.typography.bodySmall,
-                        color = changeColor,
-                        modifier = Modifier.semantics {
-                            contentDescription = changeDescription
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 2,
+                    )
+                    Text(
+                        text = statusText,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = statusColor(entry.status),
+                    )
+                }
+
+                Column(
+                    modifier = Modifier.weight(1f),
+                    horizontalAlignment = Alignment.End,
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
+                    Text(
+                        text = entry.price?.let(::formatPrice) ?: "—",
+                        style = MaterialTheme.typography.titleMedium,
+                    )
+                    entry.change?.let { change ->
+                        val changePrefix = stringResource(
+                            if (change >= 0) R.string.price_up else R.string.price_down,
+                        )
+                        val changeColor = if (change >= 0) Tertiary else Error
+                        val formattedChange = formatChange(change)
+                        val formattedPercent = formatPercentChange(entry.percentChange ?: 0.0)
+                        val changeDescription = stringResource(
+                            R.string.a11y_price_change,
+                            changePrefix,
+                            formattedChange,
+                            formattedPercent,
+                        )
+                        Text(
+                            text = "$formattedChange ($formattedPercent)",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = changeColor,
+                            modifier = Modifier.semantics {
+                                contentDescription = changeDescription
+                            },
+                        )
+                    }
+                }
+
+                val removeDescription = stringResource(
+                    R.string.remove_from_watchlist,
+                    entry.item.displaySymbol,
+                )
+                IconButton(
+                    onClick = { onRemove(entry.item.symbol) },
+                    modifier = Modifier
+                        .minimumInteractiveComponentSize()
+                        .semantics {
+                            contentDescription = removeDescription
                         },
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Delete,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
                     )
                 }
             }
 
-            val removeDescription = stringResource(
-                R.string.remove_from_watchlist,
-                entry.item.displaySymbol,
+            Text(
+                text = stringResource(R.string.chart_range_30d),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-            IconButton(
-                onClick = { onRemove(entry.item.symbol) },
-                modifier = Modifier
-                    .minimumInteractiveComponentSize()
-                    .semantics {
-                        contentDescription = removeDescription
-                    },
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Delete,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
-                )
-            }
+            PriceSparkline(
+                chart = entry.chart,
+                displaySymbol = entry.item.displaySymbol,
+            )
         }
     }
 }
