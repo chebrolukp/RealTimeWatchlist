@@ -144,24 +144,6 @@ flowchart LR
 - **`HomeNavigationTest`** — navigation suite tabs and shell content
 - **`DemoModeBannerTest`** — demo banner visibility
 
-### How to run
-
-- Unit: right-click `app/src/test/java` → **Run 'Tests in …'**
-- UI: start an emulator, then right-click `app/src/androidTest/java` → **Run 'Tests in …'**
-
-```bash
-./gradlew :app:testDebugUnitTest
-./gradlew :app:connectedDebugAndroidTest   # requires device/emulator
-```
-
----
-
-## AI / tooling assistance
-
-This project was implemented with assistance from **Cursor** (AI pair programming) for scaffolding, boilerplate, test setup, and documentation. Architectural decisions, tradeoffs, and final code structure were reviewed and kept focused on a maintainable product scope.
-
----
-
 ## Screenshots
 
 Launcher, demo, and live screenshots:
