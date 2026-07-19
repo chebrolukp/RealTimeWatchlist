@@ -3,7 +3,9 @@ package com.doximity.realtimewatchlist_krishna_doximity.data.repository
 import com.doximity.realtimewatchlist_krishna_doximity.data.local.WatchlistDao
 import com.doximity.realtimewatchlist_krishna_doximity.data.local.toDomain
 import com.doximity.realtimewatchlist_krishna_doximity.data.local.toEntity
+import com.doximity.realtimewatchlist_krishna_doximity.data.local.toStorage
 import com.doximity.realtimewatchlist_krishna_doximity.domain.model.Instrument
+import com.doximity.realtimewatchlist_krishna_doximity.domain.model.PriceAlert
 import com.doximity.realtimewatchlist_krishna_doximity.domain.model.WatchlistItem
 import com.doximity.realtimewatchlist_krishna_doximity.domain.repository.WatchlistRepository
 import kotlinx.coroutines.flow.Flow
@@ -31,4 +33,26 @@ class RoomWatchlistRepository @Inject constructor(
 
     override suspend fun isInWatchlist(symbol: String): Boolean =
         watchlistDao.getSymbols().contains(symbol)
+
+    override suspend fun setPriceAlert(symbol: String, alert: PriceAlert) {
+        watchlistDao.updateAlert(
+            symbol = symbol,
+            threshold = alert.threshold,
+            direction = alert.direction.toStorage(),
+            triggered = alert.triggered,
+        )
+    }
+
+    override suspend fun clearPriceAlert(symbol: String) {
+        watchlistDao.updateAlert(
+            symbol = symbol,
+            threshold = null,
+            direction = null,
+            triggered = false,
+        )
+    }
+
+    override suspend fun markPriceAlertTriggered(symbol: String) {
+        watchlistDao.markAlertTriggered(symbol)
+    }
 }

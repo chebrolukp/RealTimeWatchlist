@@ -89,4 +89,26 @@
     <string name="watchlist_detail_placeholder_title">Select a symbol</string>
     <string name="watchlist_detail_placeholder_message">Choose an item from your watchlist to see price details and history.</string>
     <string name="watchlist_navigate_back">Back to watchlist</string>
+
+    <!-- Price alerts -->
+    <string name="price_alert_set">Set price alert</string>
+    <string name="price_alert_edit">Edit price alert</string>
+    <string name="price_alert_clear">Clear alert</string>
+    <string name="price_alert_dialog_title">Price alert</string>
+    <string name="price_alert_threshold_label">Threshold price</string>
+    <string name="price_alert_direction_above">Alert when price goes above</string>
+    <string name="price_alert_direction_below">Alert when price goes below</string>
+    <string name="price_alert_save">Save alert</string>
+    <string name="price_alert_cancel">Cancel</string>
+    <string name="price_alert_invalid_threshold">Enter a price greater than zero</string>
+    <string name="price_alert_active_above">Alert above %1$s — watching</string>
+    <string name="price_alert_active_below">Alert below %1$s — watching</string>
+    <string name="price_alert_triggered_above">Alert above %1$s — triggered once</string>
+    <string name="price_alert_triggered_below">Alert below %1$s — triggered once</string>
+    <string name="price_alert_one_shot_hint">Fires once when the price crosses your threshold. Oscillation around that level will not notify again until you set a new alert.</string>
+    <string name="price_alert_channel_name">Price alerts</string>
+    <string name="price_alert_channel_description">One-shot notifications when a watchlist price crosses your threshold</string>
+    <string name="price_alert_notification_title">%1$s price alert</string>
+    <string name="price_alert_notification_body">%1$s is %2$s (%3$s %4$s)</string>
+    <string name="price_alert_permission_rationale">Notification permission is needed to alert you when a price crosses your threshold.</string>
 </resources>

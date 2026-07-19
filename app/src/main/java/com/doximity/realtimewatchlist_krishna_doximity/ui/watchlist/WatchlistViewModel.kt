@@ -6,12 +6,15 @@ import com.doximity.realtimewatchlist_krishna_doximity.core.domain.model.Connect
 import com.doximity.realtimewatchlist_krishna_doximity.core.domain.model.PriceStatus
 import com.doximity.realtimewatchlist_krishna_doximity.core.error.toUiText
 import com.doximity.realtimewatchlist_krishna_doximity.core.ui.model.UiText
+import com.doximity.realtimewatchlist_krishna_doximity.domain.model.PriceAlertDirection
 import com.doximity.realtimewatchlist_krishna_doximity.domain.model.WatchlistItem
 import com.doximity.realtimewatchlist_krishna_doximity.domain.model.WatchlistOverview
+import com.doximity.realtimewatchlist_krishna_doximity.domain.usecase.ClearPriceAlertUseCase
 import com.doximity.realtimewatchlist_krishna_doximity.domain.usecase.GetHistoricalPricesUseCase
 import com.doximity.realtimewatchlist_krishna_doximity.domain.usecase.ObserveWatchlistWithPricesUseCase
 import com.doximity.realtimewatchlist_krishna_doximity.domain.usecase.RefreshWatchlistUseCase
 import com.doximity.realtimewatchlist_krishna_doximity.domain.usecase.RemoveFromWatchlistUseCase
+import com.doximity.realtimewatchlist_krishna_doximity.domain.usecase.SetPriceAlertUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -71,6 +74,8 @@ class WatchlistViewModel @Inject constructor(
     private val refreshWatchlistUseCase: RefreshWatchlistUseCase,
     private val removeFromWatchlistUseCase: RemoveFromWatchlistUseCase,
     private val getHistoricalPricesUseCase: GetHistoricalPricesUseCase,
+    private val setPriceAlertUseCase: SetPriceAlertUseCase,
+    private val clearPriceAlertUseCase: ClearPriceAlertUseCase,
 ) : ViewModel() {
 
     private val isRefreshing = MutableStateFlow(false)
@@ -142,6 +147,30 @@ class WatchlistViewModel @Inject constructor(
 
     fun removeSymbol(symbol: String) {
         removeFromWatchlistUseCase(symbol)
+    }
+
+    fun setPriceAlert(
+        symbol: String,
+        threshold: Double,
+        direction: PriceAlertDirection,
+    ) {
+        viewModelScope.launch {
+            val entry = uiState.value.entries.find { it.item.symbol == symbol }
+                ?: return@launch
+            setPriceAlertUseCase(
+                symbol = symbol,
+                displaySymbol = entry.item.displaySymbol,
+                threshold = threshold,
+                direction = direction,
+                currentPrice = entry.price,
+            )
+        }
+    }
+
+    fun clearPriceAlert(symbol: String) {
+        viewModelScope.launch {
+            clearPriceAlertUseCase(symbol)
+        }
     }
 
     fun nextPage() {

@@ -7,6 +7,7 @@ import com.doximity.realtimewatchlist_krishna_doximity.core.domain.model.Connect
 import com.doximity.realtimewatchlist_krishna_doximity.core.ui.model.UiText
 import com.doximity.realtimewatchlist_krishna_doximity.domain.model.HistoricalPrices
 import com.doximity.realtimewatchlist_krishna_doximity.domain.model.Instrument
+import com.doximity.realtimewatchlist_krishna_doximity.domain.model.PriceAlert
 import com.doximity.realtimewatchlist_krishna_doximity.domain.model.PriceUpdate
 import com.doximity.realtimewatchlist_krishna_doximity.domain.model.Quote
 import com.doximity.realtimewatchlist_krishna_doximity.domain.model.WatchlistItem
@@ -202,5 +203,11 @@ class SearchViewModelTest {
 
         override suspend fun isInWatchlist(symbol: String): Boolean =
             items.value.any { it.symbol == symbol }
+
+        override suspend fun setPriceAlert(symbol: String, alert: PriceAlert) = Unit
+
+        override suspend fun clearPriceAlert(symbol: String) = Unit
+
+        override suspend fun markPriceAlertTriggered(symbol: String) = Unit
     }
 }

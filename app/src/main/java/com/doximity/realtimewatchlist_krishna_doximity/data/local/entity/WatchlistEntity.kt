@@ -10,4 +10,8 @@ data class WatchlistEntity(
     val description: String,
     val type: String,
     val addedAtEpochMs: Long,
+    val alertThreshold: Double? = null,
+    /** "ABOVE" | "BELOW"; null when no alert is configured. */
+    val alertDirection: String? = null,
+    val alertTriggered: Boolean = false,
 )

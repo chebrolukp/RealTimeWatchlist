@@ -3,6 +3,7 @@ package com.doximity.realtimewatchlist_krishna_doximity.ui.widget
 import com.doximity.realtimewatchlist_krishna_doximity.core.domain.model.ConnectionState
 import com.doximity.realtimewatchlist_krishna_doximity.domain.model.HistoricalPrices
 import com.doximity.realtimewatchlist_krishna_doximity.domain.model.Instrument
+import com.doximity.realtimewatchlist_krishna_doximity.domain.model.PriceAlert
 import com.doximity.realtimewatchlist_krishna_doximity.domain.model.PriceUpdate
 import com.doximity.realtimewatchlist_krishna_doximity.domain.model.Quote
 import com.doximity.realtimewatchlist_krishna_doximity.domain.model.WatchlistItem
@@ -88,6 +89,9 @@ class LoadWatchlistWidgetDataUseCaseTest {
         override suspend fun addInstrument(instrument: Instrument) = Unit
         override suspend fun removeInstrument(symbol: String) = Unit
         override suspend fun isInWatchlist(symbol: String): Boolean = false
+        override suspend fun setPriceAlert(symbol: String, alert: PriceAlert) = Unit
+        override suspend fun clearPriceAlert(symbol: String) = Unit
+        override suspend fun markPriceAlertTriggered(symbol: String) = Unit
     }
 
     private class FakeMarketDataRepository(

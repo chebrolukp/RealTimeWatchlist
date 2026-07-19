@@ -20,4 +20,23 @@ interface WatchlistDao {
 
     @Query("DELETE FROM watchlist WHERE symbol = :symbol")
     suspend fun delete(symbol: String)
+
+    @Query(
+        """
+        UPDATE watchlist SET
+            alertThreshold = :threshold,
+            alertDirection = :direction,
+            alertTriggered = :triggered
+        WHERE symbol = :symbol
+        """,
+    )
+    suspend fun updateAlert(
+        symbol: String,
+        threshold: Double?,
+        direction: String?,
+        triggered: Boolean,
+    )
+
+    @Query("UPDATE watchlist SET alertTriggered = 1 WHERE symbol = :symbol")
+    suspend fun markAlertTriggered(symbol: String)
 }

@@ -5,6 +5,7 @@ import com.doximity.realtimewatchlist_krishna_doximity.domain.model.HistoricalPr
 import com.doximity.realtimewatchlist_krishna_doximity.domain.model.Instrument
 import com.doximity.realtimewatchlist_krishna_doximity.domain.model.PriceUpdate
 import com.doximity.realtimewatchlist_krishna_doximity.domain.model.Quote
+import com.doximity.realtimewatchlist_krishna_doximity.domain.model.PriceAlert
 import com.doximity.realtimewatchlist_krishna_doximity.domain.model.WatchlistItem
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
@@ -29,4 +30,7 @@ interface WatchlistRepository {
     suspend fun addInstrument(instrument: Instrument)
     suspend fun removeInstrument(symbol: String)
     suspend fun isInWatchlist(symbol: String): Boolean
+    suspend fun setPriceAlert(symbol: String, alert: PriceAlert)
+    suspend fun clearPriceAlert(symbol: String)
+    suspend fun markPriceAlertTriggered(symbol: String)
 }

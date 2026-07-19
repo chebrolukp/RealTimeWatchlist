@@ -3,14 +3,17 @@ package com.doximity.realtimewatchlist_krishna_doximity.di
 import android.content.Context
 import androidx.room.Room
 import com.doximity.realtimewatchlist_krishna_doximity.BuildConfig
+import com.doximity.realtimewatchlist_krishna_doximity.data.alert.SystemPriceAlertNotifier
 import com.doximity.realtimewatchlist_krishna_doximity.data.local.WatchlistDatabase
 import com.doximity.realtimewatchlist_krishna_doximity.data.remote.FinnhubApi
 import com.doximity.realtimewatchlist_krishna_doximity.data.repository.FakeMarketDataRepository
 import com.doximity.realtimewatchlist_krishna_doximity.data.repository.FinnhubMarketDataRepository
 import com.doximity.realtimewatchlist_krishna_doximity.data.repository.RoomWatchlistRepository
 import javax.inject.Provider
+import com.doximity.realtimewatchlist_krishna_doximity.domain.alert.PriceAlertNotifier
 import com.doximity.realtimewatchlist_krishna_doximity.domain.repository.MarketDataRepository
 import com.doximity.realtimewatchlist_krishna_doximity.domain.repository.WatchlistRepository
+import dagger.Binds
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -89,10 +92,22 @@ object DatabaseModule {
         context,
         WatchlistDatabase::class.java,
         "watchlist.db",
-    ).build()
+    )
+        .addMigrations(WatchlistDatabase.MIGRATION_1_2)
+        .build()
 
     @Provides
     fun provideWatchlistDao(database: WatchlistDatabase) = database.watchlistDao()
+}
+
+@Module
+@InstallIn(SingletonComponent::class)
+abstract class AlertModule {
+    @Binds
+    @Singleton
+    abstract fun bindPriceAlertNotifier(
+        impl: SystemPriceAlertNotifier,
+    ): PriceAlertNotifier
 }
 
 @Module

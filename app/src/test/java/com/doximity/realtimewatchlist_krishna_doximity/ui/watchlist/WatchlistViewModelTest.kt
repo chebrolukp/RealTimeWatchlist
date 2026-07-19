@@ -5,19 +5,23 @@ package com.doximity.realtimewatchlist_krishna_doximity.ui.watchlist
 import com.doximity.realtimewatchlist_krishna_doximity.MainDispatcherRule
 import com.doximity.realtimewatchlist_krishna_doximity.core.domain.model.ConnectionState
 import com.doximity.realtimewatchlist_krishna_doximity.core.ui.model.UiText
+import com.doximity.realtimewatchlist_krishna_doximity.domain.alert.PriceAlertNotifier
 import com.doximity.realtimewatchlist_krishna_doximity.domain.interactor.WatchlistInteractor
 import com.doximity.realtimewatchlist_krishna_doximity.domain.model.HistoricalPrices
 import com.doximity.realtimewatchlist_krishna_doximity.domain.model.Instrument
+import com.doximity.realtimewatchlist_krishna_doximity.domain.model.PriceAlert
 import com.doximity.realtimewatchlist_krishna_doximity.domain.model.PricePoint
 import com.doximity.realtimewatchlist_krishna_doximity.domain.model.PriceUpdate
 import com.doximity.realtimewatchlist_krishna_doximity.domain.model.Quote
 import com.doximity.realtimewatchlist_krishna_doximity.domain.model.WatchlistItem
 import com.doximity.realtimewatchlist_krishna_doximity.domain.repository.MarketDataRepository
 import com.doximity.realtimewatchlist_krishna_doximity.domain.repository.WatchlistRepository
+import com.doximity.realtimewatchlist_krishna_doximity.domain.usecase.ClearPriceAlertUseCase
 import com.doximity.realtimewatchlist_krishna_doximity.domain.usecase.GetHistoricalPricesUseCase
 import com.doximity.realtimewatchlist_krishna_doximity.domain.usecase.ObserveWatchlistWithPricesUseCase
 import com.doximity.realtimewatchlist_krishna_doximity.domain.usecase.RefreshWatchlistUseCase
 import com.doximity.realtimewatchlist_krishna_doximity.domain.usecase.RemoveFromWatchlistUseCase
+import com.doximity.realtimewatchlist_krishna_doximity.domain.usecase.SetPriceAlertUseCase
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
@@ -175,6 +179,7 @@ class WatchlistViewModelTest {
         val interactor = WatchlistInteractor(
             watchlistRepository = watchlistRepository,
             marketDataRepository = marketRepository,
+            priceAlertNotifier = NoOpPriceAlertNotifier,
             applicationScope = applicationScope,
         )
         val viewModel = WatchlistViewModel(
@@ -182,6 +187,8 @@ class WatchlistViewModelTest {
             refreshWatchlistUseCase = RefreshWatchlistUseCase(interactor),
             removeFromWatchlistUseCase = RemoveFromWatchlistUseCase(interactor),
             getHistoricalPricesUseCase = GetHistoricalPricesUseCase(marketRepository),
+            setPriceAlertUseCase = SetPriceAlertUseCase(watchlistRepository, NoOpPriceAlertNotifier),
+            clearPriceAlertUseCase = ClearPriceAlertUseCase(watchlistRepository),
         )
         try {
             testBody(
@@ -223,9 +230,41 @@ class WatchlistViewModelTest {
         override suspend fun isInWatchlist(symbol: String): Boolean =
             items.value.any { it.symbol == symbol }
 
+        override suspend fun setPriceAlert(symbol: String, alert: PriceAlert) {
+            items.value = items.value.map { item ->
+                if (item.symbol == symbol) item.copy(priceAlert = alert) else item
+            }
+        }
+
+        override suspend fun clearPriceAlert(symbol: String) {
+            items.value = items.value.map { item ->
+                if (item.symbol == symbol) item.copy(priceAlert = null) else item
+            }
+        }
+
+        override suspend fun markPriceAlertTriggered(symbol: String) {
+            items.value = items.value.map { item ->
+                val alert = item.priceAlert
+                if (item.symbol == symbol && alert != null) {
+                    item.copy(priceAlert = alert.copy(triggered = true))
+                } else {
+                    item
+                }
+            }
+        }
+
         fun setItems(value: List<WatchlistItem>) {
             items.value = value
         }
+    }
+
+    private object NoOpPriceAlertNotifier : PriceAlertNotifier {
+        override fun notifyAlert(
+            symbol: String,
+            displaySymbol: String,
+            alert: PriceAlert,
+            currentPrice: Double,
+        ) = Unit
     }
 
     private class FakeMarketDataRepository(

@@ -64,6 +64,7 @@ import com.doximity.realtimewatchlist_krishna_doximity.core.ui.util.formatChange
 import com.doximity.realtimewatchlist_krishna_doximity.core.ui.util.formatPercentChange
 import com.doximity.realtimewatchlist_krishna_doximity.core.ui.util.formatPrice
 import com.doximity.realtimewatchlist_krishna_doximity.core.ui.util.formatWatchlistEntryContentDescription
+import com.doximity.realtimewatchlist_krishna_doximity.domain.model.PriceAlertDirection
 import com.doximity.realtimewatchlist_krishna_doximity.ui.theme.CardBackground
 import com.doximity.realtimewatchlist_krishna_doximity.ui.theme.Error
 import com.doximity.realtimewatchlist_krishna_doximity.ui.theme.ListItemBackground
@@ -83,6 +84,8 @@ fun WatchlistScreen(
         onRefresh = viewModel::refresh,
         onPreviousPage = viewModel::previousPage,
         onNextPage = viewModel::nextPage,
+        onSetPriceAlert = viewModel::setPriceAlert,
+        onClearPriceAlert = viewModel::clearPriceAlert,
         modifier = modifier,
     )
 }
@@ -95,6 +98,8 @@ fun WatchlistContent(
     onRefresh: () -> Unit,
     onPreviousPage: () -> Unit = {},
     onNextPage: () -> Unit = {},
+    onSetPriceAlert: (String, Double, PriceAlertDirection) -> Unit = { _, _, _ -> },
+    onClearPriceAlert: (String) -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     val contentPadding = adaptiveContentPadding()
@@ -193,6 +198,8 @@ fun WatchlistContent(
                                                     scope.launch { navigator.navigateBack() }
                                                 },
                                                 onRemove = onRemove,
+                                                onSetPriceAlert = onSetPriceAlert,
+                                                onClearPriceAlert = onClearPriceAlert,
                                                 contentPadding = contentPadding,
                                             )
                                         }
@@ -258,6 +265,8 @@ private fun WatchlistDetailPane(
     canNavigateBack: Boolean,
     onBack: () -> Unit,
     onRemove: (String) -> Unit,
+    onSetPriceAlert: (String, Double, PriceAlertDirection) -> Unit,
+    onClearPriceAlert: (String) -> Unit,
     contentPadding: Dp,
 ) {
     if (entry == null) {
@@ -353,6 +362,14 @@ private fun WatchlistDetailPane(
                         color = changeColor,
                     )
                 }
+
+                PriceAlertSection(
+                    alert = entry.item.priceAlert,
+                    onSetAlert = { threshold, direction ->
+                        onSetPriceAlert(entry.item.symbol, threshold, direction)
+                    },
+                    onClearAlert = { onClearPriceAlert(entry.item.symbol) },
+                )
 
                 Text(
                     text = stringResource(R.string.chart_range_30d),
@@ -499,6 +516,31 @@ private fun WatchlistItemCard(
                     style = MaterialTheme.typography.labelSmall,
                     color = statusColor(entry.status),
                 )
+                entry.item.priceAlert?.let { alert ->
+                    Text(
+                        text = if (alert.triggered) {
+                            stringResource(
+                                if (alert.direction == PriceAlertDirection.Above) {
+                                    R.string.price_alert_triggered_above
+                                } else {
+                                    R.string.price_alert_triggered_below
+                                },
+                                formatPrice(alert.threshold),
+                            )
+                        } else {
+                            stringResource(
+                                if (alert.direction == PriceAlertDirection.Above) {
+                                    R.string.price_alert_active_above
+                                } else {
+                                    R.string.price_alert_active_below
+                                },
+                                formatPrice(alert.threshold),
+                            )
+                        },
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.secondary,
+                    )
+                }
             }
 
             Column(

@@ -6,4 +6,5 @@ data class WatchlistItem(
     val description: String,
     val type: String,
     val addedAtEpochMs: Long,
+    val priceAlert: PriceAlert? = null,
 )

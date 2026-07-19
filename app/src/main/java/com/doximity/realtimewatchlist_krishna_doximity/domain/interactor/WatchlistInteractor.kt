@@ -2,6 +2,8 @@ package com.doximity.realtimewatchlist_krishna_doximity.domain.interactor
 
 import com.doximity.realtimewatchlist_krishna_doximity.core.domain.model.ConnectionState
 import com.doximity.realtimewatchlist_krishna_doximity.core.domain.model.PriceStatus
+import com.doximity.realtimewatchlist_krishna_doximity.domain.alert.PriceAlertEvaluator
+import com.doximity.realtimewatchlist_krishna_doximity.domain.alert.PriceAlertNotifier
 import com.doximity.realtimewatchlist_krishna_doximity.domain.model.PriceUpdate
 import com.doximity.realtimewatchlist_krishna_doximity.domain.model.Quote
 import com.doximity.realtimewatchlist_krishna_doximity.domain.model.WatchlistEntry
@@ -35,6 +37,7 @@ import javax.inject.Singleton
 class WatchlistInteractor @Inject constructor(
     private val watchlistRepository: WatchlistRepository,
     private val marketDataRepository: MarketDataRepository,
+    private val priceAlertNotifier: PriceAlertNotifier,
     @Named("applicationScope") private val applicationScope: CoroutineScope,
 ) {
     private val quoteSnapshots = MutableStateFlow<Map<String, QuoteSnapshot>>(emptyMap())
@@ -119,6 +122,7 @@ class WatchlistInteractor @Inject constructor(
         }
         quoteSnapshots.value = snapshots
 
+        val previousLive = livePrices.value
         val initialLive = snapshots.mapNotNull { (symbol, snapshot) ->
             snapshot.quote?.takeIf { it.hasPrice }?.let { quote ->
                 symbol to LivePrice(
@@ -131,6 +135,17 @@ class WatchlistInteractor @Inject constructor(
         }.toMap()
         if (initialLive.isNotEmpty()) {
             livePrices.update { current -> current + initialLive }
+            evaluatePriceAlerts(
+                itemsBySymbol = items.associateBy { it.symbol },
+                updates = initialLive.mapValues { (symbol, live) ->
+                    PriceUpdate(
+                        symbol = symbol,
+                        price = live.price,
+                        timestampMs = live.timestampMs,
+                    )
+                },
+                previousLive = previousLive,
+            )
         }
     }
 
@@ -163,8 +178,9 @@ class WatchlistInteractor @Inject constructor(
         applyLiveUpdates(batch)
     }
 
-    private fun applyLiveUpdates(updates: Map<String, PriceUpdate>) {
+    private suspend fun applyLiveUpdates(updates: Map<String, PriceUpdate>) {
         if (updates.isEmpty()) return
+        val previousLive = livePrices.value
         livePrices.update { current ->
             val next = current.toMutableMap()
             updates.forEach { (symbol, update) ->
@@ -184,6 +200,29 @@ class WatchlistInteractor @Inject constructor(
                 )
             }
             next
+        }
+        val itemsBySymbol = _overview.value.entries.associate { it.item.symbol to it.item }
+        evaluatePriceAlerts(itemsBySymbol, updates, previousLive)
+    }
+
+    private suspend fun evaluatePriceAlerts(
+        itemsBySymbol: Map<String, WatchlistItem>,
+        updates: Map<String, PriceUpdate>,
+        previousLive: Map<String, LivePrice>,
+    ) {
+        updates.forEach { (symbol, update) ->
+            val item = itemsBySymbol[symbol] ?: return@forEach
+            val alert = item.priceAlert ?: return@forEach
+            val previousPrice = previousLive[symbol]?.price
+            if (!PriceAlertEvaluator.shouldFire(alert, previousPrice, update.price)) return@forEach
+
+            watchlistRepository.markPriceAlertTriggered(symbol)
+            priceAlertNotifier.notifyAlert(
+                symbol = symbol,
+                displaySymbol = item.displaySymbol,
+                alert = alert,
+                currentPrice = update.price,
+            )
         }
     }
 
