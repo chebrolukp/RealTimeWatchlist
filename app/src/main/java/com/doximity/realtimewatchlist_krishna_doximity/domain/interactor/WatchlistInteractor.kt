@@ -11,13 +11,22 @@ import com.doximity.realtimewatchlist_krishna_doximity.domain.repository.MarketD
 import com.doximity.realtimewatchlist_krishna_doximity.domain.repository.WatchlistRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.sync.withPermit
 import javax.inject.Inject
 import javax.inject.Named
 import javax.inject.Singleton
@@ -32,6 +41,9 @@ class WatchlistInteractor @Inject constructor(
     private val livePrices = MutableStateFlow<Map<String, LivePrice>>(emptyMap())
     private var priceUpdatesJob: Job? = null
     private var watchlistJob: Job? = null
+
+    private val pendingPriceUpdates = mutableMapOf<String, PriceUpdate>()
+    private val pendingPriceMutex = Mutex()
 
     private val _overview = MutableStateFlow(
         WatchlistOverview(emptyList(), ConnectionState.Disconnected),
@@ -87,22 +99,23 @@ class WatchlistInteractor @Inject constructor(
             return
         }
 
-        val snapshots = items.associate { item ->
-            val result = marketDataRepository.getQuote(item.symbol)
-            item.symbol to result.fold(
-                onSuccess = { quote ->
-                    QuoteSnapshot(
-                        quote = quote,
-                        error = null,
-                    )
-                },
-                onFailure = { error ->
-                    QuoteSnapshot(
-                        quote = null,
-                        error = error,
-                    )
-                },
-            )
+        val semaphore = Semaphore(MAX_CONCURRENT_QUOTES)
+        val snapshots = coroutineScope {
+            items.map { item ->
+                async {
+                    semaphore.withPermit {
+                        val result = marketDataRepository.getQuote(item.symbol)
+                        item.symbol to result.fold(
+                            onSuccess = { quote ->
+                                QuoteSnapshot(quote = quote, error = null)
+                            },
+                            onFailure = { error ->
+                                QuoteSnapshot(quote = null, error = error)
+                            },
+                        )
+                    }
+                }
+            }.awaitAll().toMap()
         }
         quoteSnapshots.value = snapshots
 
@@ -124,31 +137,53 @@ class WatchlistInteractor @Inject constructor(
     private fun restartPriceUpdates() {
         priceUpdatesJob?.cancel()
         priceUpdatesJob = applicationScope.launch {
-            marketDataRepository.priceUpdates.collect { update ->
-                applyLiveUpdate(update)
+            val collector = launch {
+                marketDataRepository.priceUpdates.collect { update ->
+                    pendingPriceMutex.withLock {
+                        pendingPriceUpdates[update.symbol] = update
+                    }
+                }
+            }
+            try {
+                while (isActive) {
+                    delay(PRICE_COALESCE_MS)
+                    flushPendingPriceUpdates()
+                }
+            } finally {
+                collector.cancel()
             }
         }
     }
 
-    private fun applyLiveUpdate(update: PriceUpdate) {
-        val snapshot = quoteSnapshots.value[update.symbol]?.quote
-        val previousClose = snapshot?.previousClose
-        val change = previousClose?.let { update.price - it }
-        val percentChange = if (previousClose != null && previousClose != 0.0 && change != null) {
-            (change / previousClose) * 100
-        } else {
-            snapshot?.percentChange
+    private suspend fun flushPendingPriceUpdates() {
+        val batch = pendingPriceMutex.withLock {
+            if (pendingPriceUpdates.isEmpty()) return
+            pendingPriceUpdates.toMap().also { pendingPriceUpdates.clear() }
         }
+        applyLiveUpdates(batch)
+    }
 
+    private fun applyLiveUpdates(updates: Map<String, PriceUpdate>) {
+        if (updates.isEmpty()) return
         livePrices.update { current ->
-            current + (
-                update.symbol to LivePrice(
+            val next = current.toMutableMap()
+            updates.forEach { (symbol, update) ->
+                val snapshot = quoteSnapshots.value[symbol]?.quote
+                val previousClose = snapshot?.previousClose
+                val change = previousClose?.let { update.price - it }
+                val percentChange = if (previousClose != null && previousClose != 0.0 && change != null) {
+                    (change / previousClose) * 100
+                } else {
+                    snapshot?.percentChange
+                }
+                next[symbol] = LivePrice(
                     price = update.price,
                     change = change ?: snapshot?.change,
                     percentChange = percentChange ?: snapshot?.percentChange,
                     timestampMs = update.timestampMs,
                 )
-                )
+            }
+            next
         }
     }
 
@@ -212,5 +247,7 @@ class WatchlistInteractor @Inject constructor(
 
     companion object {
         const val STALE_THRESHOLD_MS = 30_000L
+        private const val PRICE_COALESCE_MS = 300L
+        private const val MAX_CONCURRENT_QUOTES = 4
     }
 }

@@ -10,6 +10,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -34,7 +35,7 @@ fun PriceSparkline(
         ChartUiState.Loading -> stringResource(R.string.a11y_chart_loading, displaySymbol)
         ChartUiState.Unavailable -> stringResource(R.string.a11y_chart_unavailable, displaySymbol)
         is ChartUiState.Ready -> {
-            val isUp = chart.prices.last() >= chart.prices.first()
+            val isUp = chart.tipPrice >= chart.prices.first()
             stringResource(
                 if (isUp) R.string.a11y_chart_up else R.string.a11y_chart_down,
                 displaySymbol,
@@ -65,17 +66,28 @@ fun PriceSparkline(
             }
 
             is ChartUiState.Ready -> {
-                val isUp = chart.prices.last() >= chart.prices.first()
+                val tip = chart.tipPrice
+                val isUp = tip >= chart.prices.first()
                 val lineColor = if (isUp) Tertiary else Error
-                Canvas(modifier = Modifier.fillMaxSize()) {
-                    val prices = chart.prices
-                    if (prices.size < 2) return@Canvas
+                val historicalPrices = chart.prices
+                // Geometry depends on the historical series; tip is applied while drawing.
+                val bounds = remember(historicalPrices) {
+                    val min = historicalPrices.minOrNull() ?: 0f
+                    val max = historicalPrices.maxOrNull() ?: 0f
+                    min to max
+                }
 
-                    val min = prices.minOrNull() ?: return@Canvas
-                    val max = prices.maxOrNull() ?: return@Canvas
+                Canvas(modifier = Modifier.fillMaxSize()) {
+                    if (historicalPrices.size < 2) return@Canvas
+
+                    var min = bounds.first
+                    var max = bounds.second
+                    if (tip < min) min = tip
+                    if (tip > max) max = tip
                     val range = max - min
                     val stroke = Stroke(width = 3.dp.toPx(), cap = StrokeCap.Round)
                     val path = Path()
+                    val lastIndex = historicalPrices.lastIndex.toFloat()
 
                     fun yFor(price: Float): Float =
                         if (range <= 0f) {
@@ -84,9 +96,10 @@ fun PriceSparkline(
                             size.height - ((price - min) / range) * size.height
                         }
 
-                    prices.forEachIndexed { index, price ->
-                        val x = size.width * index / (prices.lastIndex).toFloat()
-                        val y = yFor(price)
+                    historicalPrices.forEachIndexed { index, price ->
+                        val drawPrice = if (index == historicalPrices.lastIndex) tip else price
+                        val x = size.width * index / lastIndex
+                        val y = yFor(drawPrice)
                         if (index == 0) {
                             path.moveTo(x, y)
                         } else {
@@ -94,11 +107,10 @@ fun PriceSparkline(
                         }
                     }
                     drawPath(path = path, color = lineColor, style = stroke)
-
                     drawCircle(
                         color = lineColor,
                         radius = 3.dp.toPx(),
-                        center = Offset(size.width, yFor(prices.last())),
+                        center = Offset(size.width, yFor(tip)),
                     )
                 }
             }

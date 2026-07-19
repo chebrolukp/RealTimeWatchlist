@@ -28,6 +28,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -76,18 +77,19 @@ class WatchlistViewModelTest {
         advanceUntilIdle()
 
         val before = viewModel.uiState.value.entries.single().chart as ChartUiState.Ready
-        // Live quote is overlaid on the tip of the historical series.
-        assertEquals(100f, before.prices.last())
-        assertEquals(listOf(100f, 101f), before.prices.dropLast(1))
+        // Live quote is overlaid via tip without rewriting historical points.
+        assertEquals(100f, before.tipPrice)
+        assertEquals(listOf(100f, 101f, 102f), before.prices)
 
         deps.market.emitPrice(
             PriceUpdate(symbol = "AAPL", price = 110.0, timestampMs = 2L),
         )
+        advanceTimeBy(300)
         advanceUntilIdle()
 
         val after = viewModel.uiState.value.entries.single().chart as ChartUiState.Ready
-        assertEquals(110f, after.prices.last())
-        assertEquals(listOf(100f, 101f), after.prices.dropLast(1))
+        assertEquals(110f, after.tipPrice)
+        assertEquals(listOf(100f, 101f, 102f), after.prices)
     }
 
     @Test

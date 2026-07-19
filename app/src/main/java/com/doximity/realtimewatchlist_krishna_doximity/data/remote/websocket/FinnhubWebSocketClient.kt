@@ -8,6 +8,7 @@ import com.doximity.realtimewatchlist_krishna_doximity.domain.model.PriceUpdate
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -35,7 +36,10 @@ class FinnhubWebSocketClient @Inject constructor(
     private val _connectionState = MutableStateFlow(ConnectionState.Disconnected)
     val connectionState: StateFlow<ConnectionState> = _connectionState.asStateFlow()
 
-    private val _priceUpdates = MutableSharedFlow<PriceUpdate>(extraBufferCapacity = 128)//tryEmit +
+    private val _priceUpdates = MutableSharedFlow<PriceUpdate>(
+        extraBufferCapacity = 64,
+        onBufferOverflow = BufferOverflow.DROP_OLDEST,
+    )
     val priceUpdates: SharedFlow<PriceUpdate> = _priceUpdates.asSharedFlow()
 
     private var webSocket: WebSocket? = null
@@ -115,8 +119,10 @@ class FinnhubWebSocketClient @Inject constructor(
                 }
 
                 override fun onMessage(webSocket: WebSocket, text: String) {
-                    parseMessage(text)?.forEach { update ->
-                        _priceUpdates.tryEmit(update) //not a coroutine so launch{emit} blocks so use tryEmit(emit and forget)
+                    val updates = parseMessage(text) ?: return
+                    // Keep only the latest trade per symbol in this batch.
+                    updates.associateBy { it.symbol }.values.forEach { update ->
+                        _priceUpdates.tryEmit(update)
                     }
                 }
 

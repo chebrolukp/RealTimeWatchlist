@@ -23,6 +23,7 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -124,6 +125,7 @@ class WatchlistInteractorTest {
                 timestampMs = System.currentTimeMillis(),
             ),
         )
+        advanceTimeBy(300)
         advanceUntilIdle()
 
         assertEquals(191.5, interactor.overview.value.entries.single().price)

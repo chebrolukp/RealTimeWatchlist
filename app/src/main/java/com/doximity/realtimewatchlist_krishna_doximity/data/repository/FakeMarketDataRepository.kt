@@ -17,6 +17,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -32,7 +33,10 @@ class FakeMarketDataRepository @Inject constructor(
     private val _connectionState = MutableStateFlow(ConnectionState.Disconnected)
     override val connectionState: StateFlow<ConnectionState> = _connectionState.asStateFlow()
 
-    private val _priceUpdates = MutableSharedFlow<PriceUpdate>(extraBufferCapacity = 128)
+    private val _priceUpdates = MutableSharedFlow<PriceUpdate>(
+        extraBufferCapacity = 64,
+        onBufferOverflow = BufferOverflow.DROP_OLDEST,
+    )
     override val priceUpdates: Flow<PriceUpdate> = _priceUpdates.asSharedFlow()
 
     private val subscribedSymbols = linkedSetOf<String>()
@@ -103,17 +107,19 @@ class FakeMarketDataRepository @Inject constructor(
     }
 
     private suspend fun emitSimulatedUpdates() {
+        val now = System.currentTimeMillis()
         subscribedSymbols.forEach { symbol ->
             val basePrice = livePrices[symbol] ?: DemoMarketCatalog.quoteFor(symbol)?.currentPrice
                 ?: return@forEach
             val jitter = basePrice * Random.nextDouble(-JITTER_PERCENT, JITTER_PERCENT)
             val nextPrice = (basePrice + jitter).coerceAtLeast(MIN_PRICE)
             livePrices[symbol] = nextPrice
-            _priceUpdates.emit(
+            // tryEmit avoids suspending between symbols so the interactor can coalesce one batch.
+            _priceUpdates.tryEmit(
                 PriceUpdate(
                     symbol = symbol,
                     price = nextPrice,
-                    timestampMs = System.currentTimeMillis(),
+                    timestampMs = now,
                 ),
             )
         }

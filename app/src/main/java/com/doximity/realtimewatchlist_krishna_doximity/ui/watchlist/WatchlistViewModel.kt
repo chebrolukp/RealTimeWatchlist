@@ -32,7 +32,13 @@ import kotlin.math.ceil
 sealed interface ChartUiState {
     data object Loading : ChartUiState
     data object Unavailable : ChartUiState
-    data class Ready(val prices: List<Float>) : ChartUiState
+    data class Ready(
+        val prices: List<Float>,
+        val liveTip: Float? = null,
+    ) : ChartUiState {
+        val tipPrice: Float
+            get() = liveTip ?: prices.last()
+    }
 }
 
 data class WatchlistEntryUiModel(
@@ -86,7 +92,7 @@ class WatchlistViewModel @Inject constructor(
         )
     }.stateIn(
         scope = viewModelScope,
-        started = SharingStarted.WhileSubscribed(5000),
+        started = SharingStarted.WhileSubscribed(5_000),
         initialValue = WatchlistScreenState(),
     )
 
@@ -174,7 +180,7 @@ class WatchlistViewModel @Inject constructor(
         }
         if (symbolsToLoad.isEmpty()) return
 
-        coroutineScope {
+        val results = coroutineScope {
             symbolsToLoad.map { symbol ->
                 async {
                     val instrumentType = symbolTypes[symbol].orEmpty()
@@ -194,9 +200,9 @@ class WatchlistViewModel @Inject constructor(
                     symbol to chartState
                 }
             }.awaitAll()
-        }.forEach { (symbol, chartState) ->
-            chartStates.update { states -> states + (symbol to chartState) }
         }
+
+        chartStates.update { states -> states + results.toMap() }
     }
 
     private fun WatchlistOverview.toUiState(
@@ -204,7 +210,10 @@ class WatchlistViewModel @Inject constructor(
         charts: Map<String, ChartUiState>,
         requestedPage: Int,
     ): WatchlistScreenState {
-        val allEntries = entries.map { entry ->
+        val totalItems = entries.size
+        val totalPages = totalPagesFor(totalItems)
+        val currentPage = requestedPage.coerceIn(0, (totalPages - 1).coerceAtLeast(0))
+        val pageEntries = pageSlice(entries, currentPage).map { entry ->
             WatchlistEntryUiModel(
                 item = entry.item,
                 price = entry.price,
@@ -215,10 +224,6 @@ class WatchlistViewModel @Inject constructor(
                     .withLivePrice(entry.price),
             )
         }
-        val totalItems = allEntries.size
-        val totalPages = totalPagesFor(totalItems)
-        val currentPage = requestedPage.coerceIn(0, (totalPages - 1).coerceAtLeast(0))
-        val pageEntries = pageSlice(allEntries, currentPage)
 
         return WatchlistScreenState(
             isLoading = false,
@@ -249,9 +254,10 @@ private fun <T> pageSlice(items: List<T>, page: Int): List<T> {
     return items.subList(start, minOf(start + WatchlistViewModel.PAGE_SIZE, items.size))
 }
 
-/** Keeps the historical series intact and pins the tip to the latest live quote. */
+/** Pins the live tip without copying the historical series. */
 private fun ChartUiState.withLivePrice(livePrice: Double?): ChartUiState {
     if (this !is ChartUiState.Ready || livePrice == null || prices.isEmpty()) return this
-    if (prices.last() == livePrice.toFloat()) return this
-    return ChartUiState.Ready(prices = prices.dropLast(1) + livePrice.toFloat())
+    val tip = livePrice.toFloat()
+    if (liveTip == tip) return this
+    return copy(liveTip = tip)
 }
